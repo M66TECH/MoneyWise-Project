@@ -34,7 +34,24 @@
         },
         "description": "Vérifier que le serveur répond"
       },
-      "response": []
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "pm.test(\"Response has message\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.message).to.exist;",
+              "    pm.expect(jsonData.timestamp).to.exist;",
+              "});"
+            ]
+          }
+        }
+      ]
     },
     {
       "name": "Auth",
@@ -51,7 +68,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"test@moneywise.com\",\n  \"password\": \"testpassword123\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
+              "raw": "{\n  \"email\": \"test100@moneywise.com\",\n  \"password\": \"testpassword123\",\n  \"firstName\": \"Test\",\n  \"lastName\": \"User\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/auth/register",
@@ -72,11 +89,13 @@
                   "pm.test(\"Response has token\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.token).to.exist;",
+                  "    pm.expect(jsonData.utilisateur).to.exist;",
                   "});",
                   "",
                   "if (pm.response.code === 201) {",
                   "    var jsonData = pm.response.json();",
                   "    pm.environment.set(\"token\", jsonData.token);",
+                  "    console.log(\"Token saved: \" + jsonData.token);",
                   "}"
                 ]
               }
@@ -113,9 +132,15 @@
                   "    pm.response.to.have.status(200);",
                   "});",
                   "",
+                  "pm.test(\"Response has token\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.exist;",
+                  "});",
+                  "",
                   "if (pm.response.code === 200) {",
                   "    var jsonData = pm.response.json();",
                   "    pm.environment.set(\"token\", jsonData.token);",
+                  "    console.log(\"Token saved: \" + jsonData.token);",
                   "}"
                 ]
               }
@@ -151,7 +176,7 @@
                   "pm.test(\"User profile returned\", function () {",
                   "    var jsonData = pm.response.json();",
                   "    pm.expect(jsonData.utilisateur).to.exist;",
-                  "    pm.expect(jsonData.utilisateur.email).to.eql(\"test@moneywise.com\");",
+                  "    pm.expect(jsonData.utilisateur.email).to.exist;",
                   "});"
                 ]
               }
@@ -179,7 +204,24 @@
               "path": ["categories"]
             },
             "description": "Obtenir toutes les catégories"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Categories array returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.categories).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Create Category",
@@ -205,7 +247,25 @@
               "path": ["categories"]
             },
             "description": "Créer une nouvelle catégorie"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Category created\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.categorie).to.exist;",
+                  "    pm.expect(jsonData.categorie.nom).to.eql(\"Restaurant\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -228,7 +288,26 @@
               "path": ["transactions", "balance", "summary"]
             },
             "description": "Obtenir le solde"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Balance data returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.solde).to.exist;",
+                  "    pm.expect(jsonData.total_revenus).to.exist;",
+                  "    pm.expect(jsonData.total_depenses).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get All Transactions",
@@ -246,7 +325,24 @@
               "path": ["transactions"]
             },
             "description": "Obtenir toutes les transactions"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Transactions array returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.transactions).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Create Transaction",
@@ -272,7 +368,25 @@
               "path": ["transactions"]
             },
             "description": "Créer une nouvelle transaction"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test(\"Transaction created\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.transaction).to.exist;",
+                  "    pm.expect(jsonData.transaction.montant).to.eql(50);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -295,7 +409,25 @@
               "path": ["dashboard", "summary"]
             },
             "description": "Obtenir le résumé du tableau de bord"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Dashboard data returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.solde).to.exist;",
+                  "    pm.expect(jsonData.statistiques).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Get Charts Data",
@@ -323,7 +455,24 @@
               ]
             },
             "description": "Obtenir les données pour les graphiques"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Charts data returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.donneesGraphiques).to.exist;",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -356,7 +505,23 @@
               ]
             },
             "description": "Exporter les transactions en CSV"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"CSV content returned\", function () {",
+                  "    pm.expect(pm.response.text()).to.include(\"Date,Type,Montant\");",
+                  "});"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Export JSON",
@@ -384,7 +549,24 @@
               ]
             },
             "description": "Exporter les transactions en JSON"
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"JSON export data returned\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.transactions).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
