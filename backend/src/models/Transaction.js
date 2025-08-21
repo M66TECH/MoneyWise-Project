@@ -165,6 +165,26 @@ class Transaction {
         return resume;
     }
 
+    static async obtenirTotalRevenus(utilisateur_id) {
+        const resultat = await query(`
+            SELECT COALESCE(SUM(montant), 0) as total_revenus
+            FROM transactions
+            WHERE utilisateur_id = $1 AND type = 'revenu'
+        `, [utilisateur_id]);
+        
+        return parseFloat(resultat.rows[0].total_revenus);
+    }
+
+    static async obtenirTotalDepenses(utilisateur_id) {
+        const resultat = await query(`
+            SELECT COALESCE(SUM(montant), 0) as total_depenses
+            FROM transactions
+            WHERE utilisateur_id = $1 AND type = 'depense'
+        `, [utilisateur_id]);
+        
+        return parseFloat(resultat.rows[0].total_depenses);
+    }
+
     static async obtenirTransactionsAvecCategories(utilisateur_id, options = {}) {
         const { page = 1, limit = 20, type, categorie_id, startDate, endDate } = options;
         const offset = (page - 1) * limit;

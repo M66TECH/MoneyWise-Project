@@ -116,14 +116,14 @@ class Categorie {
     static async obtenirStatistiques(utilisateur_id) {
         const resultat = await query(`
             SELECT 
-                c.id,
+         c.id,
                 c.nom,
                 c.couleur,
-                c.type,
+         c.type,
                 COUNT(t.id) as nombre_transactions,
                 COALESCE(SUM(t.montant), 0) as montant_total,
                 COALESCE(AVG(t.montant), 0) as montant_moyen
-            FROM categories c
+       FROM categories c
             LEFT JOIN transactions t ON c.id = t.categorie_id
             WHERE c.utilisateur_id = $1
             GROUP BY c.id, c.nom, c.couleur, c.type
