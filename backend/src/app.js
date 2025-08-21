@@ -38,7 +38,7 @@ app.get('/api/health', (req, res) => {
 app.use(errorHandler);
 
 // Gestion des routes non trouvées
-app.use('*', (req, res) => {
+app.use((req, res) => {
   res.status(404).json({ message: 'Route non trouvée' });
 });
 
