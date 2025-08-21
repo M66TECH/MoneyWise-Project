@@ -89,23 +89,22 @@ CREATE OR REPLACE FUNCTION obtenir_statistiques_mensuelles(
     p_annee INTEGER,
     p_mois INTEGER
 )
-RETURNS TABLE(
-    total_revenus DECIMAL(10,2),
-    total_depenses DECIMAL(10,2),
-    solde DECIMAL(10,2),
-    nombre_transactions INTEGER
-) AS $$
+RETURNS RECORD AS $$
+DECLARE
+    resultat RECORD;
 BEGIN
-    RETURN QUERY
     SELECT 
         COALESCE(SUM(CASE WHEN type = 'revenu' THEN montant ELSE 0 END), 0) as total_revenus,
         COALESCE(SUM(CASE WHEN type = 'depense' THEN montant ELSE 0 END), 0) as total_depenses,
         COALESCE(SUM(CASE WHEN type = 'revenu' THEN montant ELSE -montant END), 0) as solde,
         COUNT(*) as nombre_transactions
+    INTO resultat
     FROM transactions
     WHERE utilisateur_id = p_utilisateur_id
     AND EXTRACT(YEAR FROM date_transaction) = p_annee
     AND EXTRACT(MONTH FROM date_transaction) = p_mois;
+    
+    RETURN resultat;
 END;
 $$ LANGUAGE plpgsql;
 

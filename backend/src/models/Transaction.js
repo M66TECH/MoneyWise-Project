@@ -100,11 +100,11 @@ class Transaction {
 
     static async obtenirStatistiquesMensuelles(utilisateur_id, annee, mois) {
         const resultat = await query(
-            'SELECT * FROM obtenir_statistiques_mensuelles($1, $2, $3)',
+            'SELECT obtenir_statistiques_mensuelles($1, $2, $3)',
             [utilisateur_id, annee, mois]
         );
         
-        return resultat.rows[0];
+        return resultat.rows[0].obtenir_statistiques_mensuelles;
     }
 
     static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin) {
