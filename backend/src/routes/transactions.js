@@ -197,8 +197,14 @@ router.delete('/:id', async (req, res, next) => {
 router.get('/balance/summary', async (req, res, next) => {
   try {
     const solde = await Transaction.obtenirSolde(req.utilisateur_id);
+    const total_revenus = await Transaction.obtenirTotalRevenus(req.utilisateur_id);
+    const total_depenses = await Transaction.obtenirTotalDepenses(req.utilisateur_id);
     
-    res.json({ solde });
+    res.json({ 
+      solde,
+      total_revenus,
+      total_depenses
+    });
   } catch (erreur) {
     next(erreur);
   }
