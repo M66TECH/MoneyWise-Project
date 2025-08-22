@@ -5,9 +5,86 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Transactions
+ *   description: Gestion des transactions financières
+ */
+
 // Appliquer l'authentification à toutes les routes
 router.use(auth);
 
+/**
+ * @swagger
+ * /api/transactions:
+ *   get:
+ *     summary: Obtenir toutes les transactions de l'utilisateur
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Numéro de page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Nombre d'éléments par page
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [revenu, depense]
+ *         description: Filtrer par type de transaction
+ *       - in: query
+ *         name: categoryId
+ *         schema:
+ *           type: integer
+ *         description: Filtrer par ID de catégorie
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Liste des transactions récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 transactions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Transaction'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir toutes les transactions de l'utilisateur
 router.get('/', async (req, res, next) => {
   try {
@@ -51,6 +128,70 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions:
+ *   post:
+ *     summary: Créer une nouvelle transaction
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *               - amount
+ *               - categoryId
+ *               - date
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [revenu, depense]
+ *                 example: depense
+ *               amount:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 25.50
+ *               categoryId:
+ *                 type: integer
+ *                 example: 1
+ *               description:
+ *                 type: string
+ *                 example: Déjeuner au restaurant
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2024-08-21"
+ *     responses:
+ *       201:
+ *         description: Transaction créée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Transaction créée avec succès
+ *                 transaction:
+ *                   $ref: '#/components/schemas/Transaction'
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Catégorie non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Créer une nouvelle transaction
 router.post('/', async (req, res, next) => {
   try {

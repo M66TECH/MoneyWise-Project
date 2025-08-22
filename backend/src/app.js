@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpecs = require('./config/swagger');
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const categoryRoutes = require('./routes/categories');
@@ -25,6 +27,12 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Documentation Swagger
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'MoneyWise API Documentation'
+}));
+
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
@@ -32,6 +40,28 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
 
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     summary: Vérifier l'état de l'API
+ *     tags: [Système]
+ *     responses:
+ *       200:
+ *         description: API opérationnelle
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: MoneyWise API is running!
+ *                 timestamp:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-08-21T10:30:00.000Z"
+ */
 // Route de test
 app.get('/api/health', (req, res) => {
   res.json({ message: 'MoneyWise API is running!', timestamp: new Date().toISOString() });
