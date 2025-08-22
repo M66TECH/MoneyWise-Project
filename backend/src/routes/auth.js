@@ -5,6 +5,74 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Authentification
+ *   description: Gestion de l'authentification des utilisateurs
+ */
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: Inscription d'un nouvel utilisateur
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - firstName
+ *               - lastName
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: password123
+ *               firstName:
+ *                 type: string
+ *                 example: Jean
+ *               lastName:
+ *                 type: string
+ *                 example: Dupont
+ *     responses:
+ *       201:
+ *         description: Utilisateur créé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Utilisateur créé avec succès
+ *                 utilisateur:
+ *                   $ref: '#/components/schemas/Utilisateur'
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Email déjà utilisé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Inscription d'un nouvel utilisateur
 router.post('/register', async (req, res, next) => {
   try {
@@ -50,6 +118,58 @@ router.post('/register', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/login:
+ *   post:
+ *     summary: Connexion utilisateur
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *               password:
+ *                 type: string
+ *                 example: password123
+ *     responses:
+ *       200:
+ *         description: Connexion réussie
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Connexion réussie
+ *                 utilisateur:
+ *                   $ref: '#/components/schemas/Utilisateur'
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Email ou mot de passe incorrect
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Connexion utilisateur
 router.post('/login', async (req, res, next) => {
   try {
@@ -95,6 +215,28 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/profile:
+ *   get:
+ *     summary: Obtenir le profil utilisateur
+ *     tags: [Authentification]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profil utilisateur récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Utilisateur'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir le profil utilisateur
 router.get('/profile', auth, async (req, res, next) => {
   try {

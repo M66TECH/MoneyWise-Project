@@ -4,9 +4,50 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Catégories
+ *   description: Gestion des catégories de transactions
+ */
+
 // Appliquer l'authentification à toutes les routes
 router.use(auth);
 
+/**
+ * @swagger
+ * /api/categories:
+ *   get:
+ *     summary: Obtenir toutes les catégories de l'utilisateur
+ *     tags: [Catégories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [revenu, depense]
+ *         description: Filtrer par type de catégorie
+ *     responses:
+ *       200:
+ *         description: Liste des catégories récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 categories:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Categorie'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir toutes les catégories de l'utilisateur
 router.get('/', async (req, res, next) => {
   try {
@@ -42,6 +83,61 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/categories:
+ *   post:
+ *     summary: Créer une nouvelle catégorie
+ *     tags: [Catégories]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - color
+ *               - type
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Restaurant
+ *               color:
+ *                 type: string
+ *                 example: "#FF6B6B"
+ *               type:
+ *                 type: string
+ *                 enum: [revenu, depense]
+ *                 example: depense
+ *     responses:
+ *       201:
+ *         description: Catégorie créée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Catégorie créée avec succès
+ *                 categorie:
+ *                   $ref: '#/components/schemas/Categorie'
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Catégorie avec ce nom existe déjà
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Créer une nouvelle catégorie
 router.post('/', async (req, res, next) => {
   try {

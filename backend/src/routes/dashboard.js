@@ -5,9 +5,57 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Dashboard
+ *   description: Données pour le tableau de bord
+ */
+
 // Appliquer l'authentification à toutes les routes
 router.use(auth);
 
+/**
+ * @swagger
+ * /api/dashboard/summary:
+ *   get:
+ *     summary: Obtenir le résumé du dashboard
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Résumé du dashboard récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 solde:
+ *                   type: number
+ *                   example: 1250.75
+ *                 statistiques_mensuelles:
+ *                   type: object
+ *                   properties:
+ *                     total_revenus:
+ *                       type: number
+ *                       example: 2000.00
+ *                     total_depenses:
+ *                       type: number
+ *                       example: 749.25
+ *                     solde:
+ *                       type: number
+ *                       example: 1250.75
+ *                     nombre_transactions:
+ *                       type: integer
+ *                       example: 15
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir le résumé du tableau de bord
 router.get('/summary', async (req, res, next) => {
   try {

@@ -18,6 +18,27 @@ Backend Node.js/Express pour l'application MoneyWise - Gestion des finances pers
 - PostgreSQL >= 12.0
 - npm ou yarn
 
+## 📚 Documentation API
+
+L'API MoneyWise inclut une documentation interactive générée avec Swagger/OpenAPI.
+
+### Accès à la documentation :
+- **Local** : http://localhost:3000/api-docs
+- **Production** : https://moneywise-backend-187q.onrender.com/api-docs
+
+### Fonctionnalités de la documentation :
+- ✅ **Interface interactive** - Testez les API directement depuis la documentation
+- ✅ **Authentification intégrée** - Utilisez le bouton "Authorize" pour ajouter votre token JWT
+- ✅ **Exemples de requêtes** - Tous les endpoints incluent des exemples
+- ✅ **Schémas de données** - Documentation complète des modèles de données
+- ✅ **Codes de réponse** - Tous les codes HTTP possibles sont documentés
+
+### Comment utiliser la documentation :
+1. Ouvrez l'URL de la documentation
+2. Cliquez sur "Authorize" et ajoutez votre token JWT : `Bearer votre_token_ici`
+3. Explorez les différentes sections (Authentification, Catégories, Transactions, etc.)
+4. Testez les endpoints directement depuis l'interface
+
 ## 🛠️ Installation
 
 1. **Cloner le projet**

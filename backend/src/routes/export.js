@@ -5,9 +5,72 @@ const { auth } = require('../middleware/auth');
 
 const router = express.Router();
 
+/**
+ * @swagger
+ * tags:
+ *   name: Export
+ *   description: Exportation des données
+ */
+
 // Appliquer l'authentification à toutes les routes
 router.use(auth);
 
+/**
+ * @swagger
+ * /api/export/transactions/csv:
+ *   get:
+ *     summary: Exporter les transactions en CSV
+ *     tags: [Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [revenu, depense]
+ *         description: Filtrer par type de transaction
+ *     responses:
+ *       200:
+ *         description: Fichier CSV généré avec succès
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *               example: "Date,Type,Montant,Catégorie,Description\n2024-08-21,Dépense,-25.50,Restaurant,Déjeuner au restaurant"
+ *         headers:
+ *           Content-Disposition:
+ *             description: Nom du fichier de téléchargement
+ *             schema:
+ *               type: string
+ *               example: "attachment; filename=\"transactions_2024-01-01_2024-12-31.csv\""
+ *       400:
+ *         description: Dates manquantes ou invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Exporter les transactions en CSV
 router.get('/transactions/csv', async (req, res, next) => {
   try {
