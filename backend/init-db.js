@@ -5,7 +5,7 @@ const { query } = require('./src/config/database');
 
 async function initialiserBaseDeDonnees() {
     try {
-        console.log('🔄 Initialisation de la base de données...');
+        console.log(' Initialisation de la base de données...');
         
         // Lire le fichier SQL
         const sqlPath = path.join(__dirname, 'src', 'database', 'init.sql');
@@ -14,10 +14,10 @@ async function initialiserBaseDeDonnees() {
         // Exécuter le script SQL
         await query(sqlContent);
         
-        console.log('✅ Base de données initialisée avec succès !');
+        console.log(' Base de données initialisée avec succès !');
         
     } catch (erreur) {
-        console.error('❌ Erreur lors de l\'initialisation:', erreur);
+        console.error(' Erreur lors de l\'initialisation:', erreur);
         process.exit(1);
     }
 }
