@@ -6,6 +6,9 @@ const pool = new Pool({
   database: process.env.DB_NAME || 'moneywise',
   password: process.env.DB_PASSWORD || 'milkaM66',
   port: process.env.DB_PORT || 5432,
+  ssl: process.env.NODE_ENV === 'production' ? {
+    rejectUnauthorized: false
+  } : false,
 });
 
 // Test de connexion
