@@ -9,6 +9,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:api": "node test-api.js",
     "db:init": "psql -U postgres -d moneywise -f src/database/init.sql",
+    "db:init-render": "node init-db-render.js",
     "db:create": "createdb -U postgres moneywise",
     "db:seed": "psql -U postgres -d moneywise -f src/database/seed.sql",
     "db:reset": "dropdb -U postgres moneywise && npm run db:create && npm run db:init && npm run db:seed"

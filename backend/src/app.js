@@ -8,7 +8,7 @@ const dashboardRoutes = require('./routes/dashboard');
 const exportRoutes = require('./routes/export');
 const { errorHandler } = require('./middleware/errorHandler');
 
-const { initialiserBaseDeDonnees } = require('../init-db');
+const { initialiserBaseDeDonneesRender } = require('../init-db-render');
 
 
 // Configuration des variables d'environnement
@@ -52,7 +52,9 @@ const PORT = process.env.PORT || 3000;
 async function demarrerServeur() {
   try {
     // Initialiser la base de données
-    await initialiserBaseDeDonnees();
+    console.log('🔄 Tentative d\'initialisation de la base de données...');
+    await initialiserBaseDeDonneesRender();
+    console.log('✅ Base de données initialisée avec succès !');
     
     // Démarrer le serveur
     app.listen(PORT, () => {
@@ -60,17 +62,19 @@ async function demarrerServeur() {
       console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
     });
   } catch (erreur) {
-    console.error('❌ Erreur lors du démarrage:', erreur);
-    process.exit(1);
+    console.error('❌ Erreur lors de l\'initialisation de la base de données:', erreur.message);
+    console.log('⚠️ Démarrage du serveur sans initialisation de la base de données...');
+    
+    // Démarrer le serveur même si l'initialisation échoue
+    app.listen(PORT, () => {
+      console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
+      console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
+      console.log('⚠️ La base de données n\'a pas été initialisée. Certaines fonctionnalités peuvent ne pas fonctionner.');
+    });
   }
 }
 
 demarrerServeur();
-
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
-  console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
-});
 
 
 module.exports = app;
