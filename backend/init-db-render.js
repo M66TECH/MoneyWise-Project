@@ -16,23 +16,17 @@ async function initialiserBaseDeDonneesRender() {
         const sqlPath = path.join(__dirname, 'src', 'database', 'init.sql');
         const sqlContent = fs.readFileSync(sqlPath, 'utf8');
         
-        // Exécuter le script SQL par parties pour éviter les erreurs
-        const statements = sqlContent.split(';').filter(stmt => stmt.trim());
-        
-        for (let i = 0; i < statements.length; i++) {
-            const statement = statements[i].trim();
-            if (statement) {
-                try {
-                    await query(statement);
-                    console.log(`✅ Exécution de la requête ${i + 1}/${statements.length}`);
-                } catch (err) {
-                    // Ignorer les erreurs de création si l'objet existe déjà
-                    if (err.code === '42710' || err.code === '42P07') {
-                        console.log(`⚠️ Objet déjà existant (requête ${i + 1})`);
-                    } else {
-                        console.error(`❌ Erreur requête ${i + 1}:`, err.message);
-                    }
-                }
+        // Exécuter le script SQL complet
+        try {
+            await query(sqlContent);
+            console.log('✅ Script SQL exécuté avec succès');
+        } catch (err) {
+            // Ignorer les erreurs de création si l'objet existe déjà
+            if (err.code === '42710' || err.code === '42P07') {
+                console.log('⚠️ Certains objets existent déjà');
+            } else {
+                console.error('❌ Erreur lors de l\'exécution du script SQL:', err.message);
+                throw err;
             }
         }
         
