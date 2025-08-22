@@ -7,7 +7,9 @@ const categoryRoutes = require('./routes/categories');
 const dashboardRoutes = require('./routes/dashboard');
 const exportRoutes = require('./routes/export');
 const { errorHandler } = require('./middleware/errorHandler');
+
 const { initialiserBaseDeDonnees } = require('../init-db');
+
 
 // Configuration des variables d'environnement
 dotenv.config();
@@ -45,6 +47,7 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
+
 // Initialiser la base de données au démarrage
 async function demarrerServeur() {
   try {
@@ -63,5 +66,11 @@ async function demarrerServeur() {
 }
 
 demarrerServeur();
+=======
+app.listen(PORT, () => {
+  console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
+  console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
+});
+
 
 module.exports = app;
