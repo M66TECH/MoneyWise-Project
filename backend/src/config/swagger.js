@@ -9,7 +9,7 @@ const options = {
       description: 'API de gestion de finances personnelles MoneyWise',
       contact: {
         name: 'Équipe MoneyWise',
-        email: 'contact@moneywise.com'
+        email: 'malicknd00@gmail.com'
       },
       license: {
         name: 'MIT',
