@@ -66,7 +66,7 @@ async function demarrerServeur() {
 }
 
 demarrerServeur();
-=======
+
 app.listen(PORT, () => {
   console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
   console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
