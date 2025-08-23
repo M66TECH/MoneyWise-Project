@@ -195,7 +195,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
     });
 
     // Créer le PDF
-    const doc = new jsPDF();
+    const doc = new jsPDF.default();
     
     // Titre
     doc.setFontSize(20);
@@ -203,7 +203,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
     
     // Informations de la période
     doc.setFontSize(12);
-    doc.text(`Période : ${startDate} à ${endDate}`, 20, 35);
+    doc.text(`Periode : ${startDate} a ${endDate}`, 20, 35);
     doc.text(`Nombre de transactions : ${transactions.length}`, 20, 45);
     
     // En-têtes du tableau
@@ -222,16 +222,16 @@ router.get('/transactions/pdf', async (req, res, next) => {
         yPosition = 20;
       }
       
-      const typeTransaction = transaction.type === 'revenu' ? 'Revenu' : 'Dépense';
+      const typeTransaction = transaction.type === 'revenu' ? 'Revenu' : 'Depense';
       const montant = transaction.type === 'revenu' ? `+${transaction.montant}` : `-${transaction.montant}`;
-      const categorie = transaction.nom_categorie || 'Non catégorisé';
+      const categorie = transaction.nom_categorie || 'Non categorise';
       const description = transaction.description || '';
       
-      doc.text(transaction.date_transaction, 20, yPosition);
-      doc.text(typeTransaction, 50, yPosition);
-      doc.text(montant, 80, yPosition);
-      doc.text(categorie, 120, yPosition);
-      doc.text(description.substring(0, 30), 160, yPosition);
+      doc.text(String(transaction.date_transaction), 20, yPosition);
+      doc.text(String(typeTransaction), 50, yPosition);
+      doc.text(String(montant), 80, yPosition);
+      doc.text(String(categorie), 120, yPosition);
+      doc.text(String(description).substring(0, 30), 160, yPosition);
       
       yPosition += 10;
     });
@@ -250,9 +250,9 @@ router.get('/transactions/pdf', async (req, res, next) => {
     doc.text('Résumé', 20, 20);
     doc.setFontSize(12);
     doc.text(`Total Revenus : ${totalRevenus.toFixed(2)} €`, 20, 40);
-    doc.text(`Total Dépenses : ${totalDepenses.toFixed(2)} €`, 20, 50);
+    doc.text(`Total Depenses : ${totalDepenses.toFixed(2)} €`, 20, 50);
     doc.text(`Solde : ${solde.toFixed(2)} €`, 20, 60);
-    doc.text(`Généré le : ${new Date().toLocaleDateString('fr-FR')}`, 20, 80);
+    doc.text(`Genere le : ${new Date().toLocaleDateString('fr-FR')}`, 20, 80);
 
     // Définir les headers pour le téléchargement
     const nomFichier = `transactions_${startDate}_${endDate}.pdf`;

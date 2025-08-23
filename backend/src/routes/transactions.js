@@ -112,7 +112,7 @@ router.get('/', async (req, res, next) => {
 });
 
 // Obtenir une transaction spécifique
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', auth, async (req, res, next) => {
   try {
     const transaction = await Transaction.trouverParId(req.params.id, req.utilisateur_id);
     
@@ -193,7 +193,7 @@ router.get('/:id', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Créer une nouvelle transaction
-router.post('/', async (req, res, next) => {
+router.post('/', auth, async (req, res, next) => {
   try {
     const { type, amount, categoryId, description, date } = req.body;
 
@@ -321,7 +321,7 @@ router.post('/', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Modifier une transaction
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auth, async (req, res, next) => {
   try {
     const { type, amount, categoryId, description, date } = req.body;
 
@@ -418,7 +418,7 @@ router.put('/:id', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Supprimer une transaction
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auth, async (req, res, next) => {
   try {
     const transaction = await Transaction.trouverParId(req.params.id, req.utilisateur_id);
     
@@ -514,6 +514,105 @@ router.get('/stats/trend/:year', async (req, res, next) => {
     res.json({
       annee: parseInt(year),
       evolution_mensuelle: evolutionMensuelle
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+/**
+ * @swagger
+ * /api/transactions/by-category/{categoryId}:
+ *   get:
+ *     summary: Obtenir les transactions par catégorie
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: categoryId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la catégorie
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Numéro de page
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: Nombre d'éléments par page
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *     responses:
+ *       200:
+ *         description: Transactions par catégorie récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 transactions:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/Transaction'
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     limit:
+ *                       type: integer
+ *       404:
+ *         description: Catégorie non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Obtenir les transactions par catégorie
+router.get('/by-category/:categoryId', auth, async (req, res, next) => {
+  try {
+    const { categoryId } = req.params;
+    const { page = 1, limit = 20, startDate, endDate } = req.query;
+
+    // Vérifier que la catégorie appartient à l'utilisateur
+    const categorie = await Categorie.trouverParId(categoryId);
+    if (!categorie || categorie.utilisateur_id !== req.utilisateur_id) {
+      return res.status(404).json({
+        message: 'Catégorie non trouvée'
+      });
+    }
+
+    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      categorie_id: categoryId,
+      startDate,
+      endDate
+    });
+
+    res.json({
+      transactions,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit)
+      }
     });
   } catch (erreur) {
     next(erreur);

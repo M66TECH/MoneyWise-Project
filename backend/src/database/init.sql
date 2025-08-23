@@ -38,6 +38,16 @@ CREATE TABLE IF NOT EXISTS transactions (
     date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Table des tokens de réinitialisation de mot de passe
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- Trigger pour mettre à jour automatiquement date_modification
 CREATE OR REPLACE FUNCTION mettre_a_jour_date_modification()

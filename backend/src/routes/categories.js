@@ -99,7 +99,7 @@ router.get('/', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Obtenir une catégorie spécifique
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', auth, async (req, res, next) => {
   try {
     const categorie = await Categorie.trouverParId(req.params.id);
     
@@ -109,7 +109,7 @@ router.get('/:id', async (req, res, next) => {
       });
     }
 
-    res.json({ categorie });
+    res.json(categorie);
   } catch (erreur) {
     next(erreur);
   }
@@ -171,7 +171,7 @@ router.get('/:id', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Créer une nouvelle catégorie
-router.post('/', async (req, res, next) => {
+router.post('/', auth, async (req, res, next) => {
   try {
     const { name, color, type } = req.body;
 
@@ -284,7 +284,7 @@ router.post('/', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Modifier une catégorie
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auth, async (req, res, next) => {
   try {
     const { name, color, type } = req.body;
 
@@ -377,7 +377,7 @@ router.put('/:id', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Supprimer une catégorie
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auth, async (req, res, next) => {
   try {
     const categorie = await Categorie.trouverParId(req.params.id);
     
