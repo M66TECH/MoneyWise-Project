@@ -249,6 +249,77 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/{id}:
+ *   put:
+ *     summary: Modifier une transaction existante
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la transaction à modifier
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - type
+ *               - amount
+ *               - categoryId
+ *               - date
+ *             properties:
+ *               type:
+ *                 type: string
+ *                 enum: [revenu, depense]
+ *                 example: depense
+ *               amount:
+ *                 type: number
+ *                 minimum: 0
+ *                 example: 25.50
+ *               categoryId:
+ *                 type: integer
+ *                 example: 1
+ *               description:
+ *                 type: string
+ *                 example: Déjeuner au restaurant
+ *               date:
+ *                 type: string
+ *                 format: date
+ *                 example: "2024-08-21"
+ *     responses:
+ *       200:
+ *         description: Transaction modifiée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Transaction modifiée avec succès
+ *                 transaction:
+ *                   $ref: '#/components/schemas/Transaction'
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Transaction ou catégorie non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Modifier une transaction
 router.put('/:id', async (req, res, next) => {
   try {
@@ -313,6 +384,39 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/{id}:
+ *   delete:
+ *     summary: Supprimer une transaction
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la transaction à supprimer
+ *     responses:
+ *       200:
+ *         description: Transaction supprimée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Transaction supprimée avec succès
+ *       404:
+ *         description: Transaction non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Supprimer une transaction
 router.delete('/:id', async (req, res, next) => {
   try {
