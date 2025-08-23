@@ -64,3 +64,12 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Test files
+test-*.js
+*test*.js
+DOCUMENTATION_*.md
+FRONTEND_DOCUMENTATION.md
+MoneyWise_Postman_Collection*.json
+verifier-utilisateurs.js
+TESTS_LOCAUX.md

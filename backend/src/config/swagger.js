@@ -33,17 +33,18 @@ const options = {
         }
       },
       schemas: {
-        Utilisateur: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer', example: 1 },
-            email: { type: 'string', format: 'email', example: 'user@example.com' },
-            prenom: { type: 'string', example: 'Jean' },
-            nom: { type: 'string', example: 'Dupont' },
-            date_creation: { type: 'string', format: 'date-time' },
-            date_modification: { type: 'string', format: 'date-time' }
-          }
-        },
+                 Utilisateur: {
+           type: 'object',
+           properties: {
+             id: { type: 'integer', example: 1 },
+             email: { type: 'string', format: 'email', example: 'user@example.com' },
+             prenom: { type: 'string', example: 'Jean' },
+             nom: { type: 'string', example: 'Dupont' },
+             theme: { type: 'string', enum: ['light', 'dark'], example: 'light' },
+             date_creation: { type: 'string', format: 'date-time' },
+             date_modification: { type: 'string', format: 'date-time' }
+           }
+         },
         Categorie: {
           type: 'object',
           properties: {

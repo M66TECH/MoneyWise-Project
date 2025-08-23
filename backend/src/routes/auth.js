@@ -275,6 +275,70 @@ router.put('/profile', auth, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/auth/profile/theme:
+ *   put:
+ *     summary: Changer le thème de l'utilisateur
+ *     tags: [Authentification]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - theme
+ *             properties:
+ *               theme:
+ *                 type: string
+ *                 enum: [light, dark]
+ *                 example: dark
+ *     responses:
+ *       200:
+ *         description: Thème mis à jour avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Thème mis à jour avec succès
+ *                 utilisateur:
+ *                   $ref: '#/components/schemas/Utilisateur'
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Changer le thème
+router.put('/profile/theme', auth, async (req, res, next) => {
+  try {
+    const { theme } = req.body;
+
+    if (!theme || !['light', 'dark'].includes(theme)) {
+      return res.status(400).json({
+        message: 'Thème doit être "light" ou "dark"'
+      });
+    }
+
+    // Mettre à jour le thème (à implémenter dans le modèle Utilisateur)
+    await req.utilisateur.mettreAJourTheme(theme);
+
+    res.json({
+      message: 'Thème mis à jour avec succès',
+      utilisateur: req.utilisateur.toJSON()
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
 // Changer le mot de passe
 router.put('/change-password', auth, async (req, res, next) => {
   try {
@@ -302,6 +366,86 @@ router.put('/change-password', auth, async (req, res, next) => {
       message: 'Mot de passe modifié avec succès'
     });
   } catch (erreur) {
+    next(erreur);
+  }
+});
+
+// Récupération de mot de passe
+router.post('/forgot-password', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: 'Email requis'
+      });
+    }
+
+    // Vérifier si l'utilisateur existe
+    const utilisateur = await Utilisateur.trouverParEmail(email);
+    if (!utilisateur) {
+      return res.status(404).json({
+        message: 'Aucun utilisateur trouvé avec cet email'
+      });
+    }
+
+    // Générer un token de réinitialisation (expire dans 1 heure)
+    const resetToken = jwt.sign(
+      { utilisateur_id: utilisateur.id, type: 'reset' },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
+
+    // TODO: Envoyer email avec le lien de réinitialisation
+    // Pour l'instant, on retourne le token (en production, envoyer par email)
+    res.json({
+      message: 'Email de réinitialisation envoyé',
+      resetToken: process.env.NODE_ENV === 'development' ? resetToken : undefined
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+// Réinitialisation de mot de passe
+router.post('/reset-password', async (req, res, next) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({
+        message: 'Token et nouveau mot de passe requis'
+      });
+    }
+
+    // Vérifier le token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (decoded.type !== 'reset') {
+      return res.status(400).json({
+        message: 'Token invalide'
+      });
+    }
+
+    // Trouver l'utilisateur
+    const utilisateur = await Utilisateur.trouverParId(decoded.utilisateur_id);
+    if (!utilisateur) {
+      return res.status(404).json({
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    // Changer le mot de passe
+    await utilisateur.changerMotDePasse(newPassword);
+
+    res.json({
+      message: 'Mot de passe réinitialisé avec succès'
+    });
+  } catch (erreur) {
+    if (erreur.name === 'JsonWebTokenError') {
+      return res.status(400).json({
+        message: 'Token invalide ou expiré'
+      });
+    }
     next(erreur);
   }
 });

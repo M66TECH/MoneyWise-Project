@@ -8,6 +8,7 @@
     "dev": "nodemon src/app.js",
     "test": "echo \"Error: no test specified\" && exit 1",
     "test:api": "node test-api.js",
+    "test:categories": "node test-categories.js",
     "db:init": "psql -U postgres -d moneywise -f src/database/init.sql",
     "db:init-render": "node init-db-render.js",
     "db:create": "createdb -U postgres moneywise",
@@ -32,6 +33,7 @@
     "dotenv": "^17.2.1",
     "express": "^5.1.0",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.1",
     "pg": "^8.16.3",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1"

@@ -206,6 +206,42 @@ router.get('/charts', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/dashboard/alerts:
+ *   get:
+ *     summary: Obtenir les alertes et notifications
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Alertes récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 alertes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [warning, danger, info]
+ *                       message:
+ *                         type: string
+ *                       severite:
+ *                         type: string
+ *                         enum: [low, medium, high]
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir les alertes et notifications
 router.get('/alerts', async (req, res, next) => {
   try {

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     mot_de_passe VARCHAR(255) NOT NULL,
     prenom VARCHAR(100) NOT NULL,
     nom VARCHAR(100) NOT NULL,
+    theme VARCHAR(10) DEFAULT 'light' CHECK (theme IN ('light', 'dark')),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
