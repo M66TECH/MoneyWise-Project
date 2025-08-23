@@ -64,3 +64,36 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+
+# Test files and local development files
+test-*.js
+*test*.js
+diagnostic-*.js
+ajouter-*.js
+init-db-*.js
+verifier-*.js
+reinitialiser-*.js
+nettoyer-*.js
+corriger-*.js
+tester-*.js
+test-*.js
+*test*.js
+
+# Documentation files (local development)
+DOCUMENTATION_*.md
+FRONTEND_DOCUMENTATION.md
+TESTS_LOCAUX.md
+README_Postman.md
+CONFIGURATION_EMAIL.md
+tests-postman-corriges.md
+RESUME_CORRECTIONS_POSTMAN.md
+
+# Postman collections (local development)
+MoneyWise_Postman_Collection*.json
+MoneyWise-API*.json
+*postman*.json
+
+# Local configuration files
+.env.example
+
+# Local development files

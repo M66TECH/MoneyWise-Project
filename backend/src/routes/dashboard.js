@@ -98,14 +98,92 @@ router.get('/summary', async (req, res, next) => {
 
     res.json({
       solde,
-      statistiquesMensuelles,
-      depensesParCategorie,
-      sixDerniersMois
+      total_revenus: statistiquesMensuelles.total_revenus,
+      total_depenses: statistiquesMensuelles.total_depenses,
+      statistiques_mensuelles: statistiquesMensuelles,
+      depenses_par_categorie: depensesParCategorie,
+      evolution_six_mois: sixDerniersMois
     });
   } catch (erreur) {
     next(erreur);
   }
 });
+
+/**
+ * @swagger
+ * /api/dashboard/monthly-stats:
+ *   get:
+ *     summary: Obtenir les statistiques mensuelles
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: month
+ *         schema:
+ *           type: string
+ *           format: YYYY-MM
+ *         description: Mois pour les statistiques (format YYYY-MM)
+ *         example: "2024-01"
+ *     responses:
+ *       200:
+ *         description: Statistiques mensuelles récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 mois:
+ *                   type: string
+ *                   example: "2024-01"
+ *                 revenus:
+ *                   type: number
+ *                   example: 2000.00
+ *                 depenses:
+ *                   type: number
+ *                   example: 749.25
+ *                 solde:
+ *                   type: number
+ *                   example: 1250.75
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Obtenir les statistiques mensuelles
+router.get('/monthly-stats', async (req, res, next) => {
+  try {
+    const { month } = req.query;
+    
+    if (!month) {
+      return res.status(400).json({
+        message: 'Le paramètre month est requis (format: YYYY-MM)'
+      });
+    }
+
+    const [year, monthNum] = month.split('-').map(Number);
+    
+    if (!year || !monthNum || monthNum < 1 || monthNum > 12) {
+      return res.status(400).json({
+        message: 'Format de mois invalide. Utilisez YYYY-MM'
+      });
+    }
+
+    const statistiques = await Transaction.obtenirStatistiquesMensuelles(req.utilisateur_id, year, monthNum);
+
+    res.json({
+      mois: month,
+      revenus: statistiques.total_revenus,
+      depenses: statistiques.total_depenses,
+      solde: statistiques.solde
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
 
 // Obtenir les statistiques détaillées
 router.get('/stats', async (req, res, next) => {
@@ -206,6 +284,42 @@ router.get('/charts', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/dashboard/alerts:
+ *   get:
+ *     summary: Obtenir les alertes et notifications
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Alertes récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 alertes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       type:
+ *                         type: string
+ *                         enum: [warning, danger, info]
+ *                       message:
+ *                         type: string
+ *                       severite:
+ *                         type: string
+ *                         enum: [low, medium, high]
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir les alertes et notifications
 router.get('/alerts', async (req, res, next) => {
   try {

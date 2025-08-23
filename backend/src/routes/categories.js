@@ -66,8 +66,40 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   get:
+ *     summary: Obtenir une catégorie spécifique
+ *     tags: [Catégories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la catégorie
+ *     responses:
+ *       200:
+ *         description: Catégorie récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 categorie:
+ *                   $ref: '#/components/schemas/Categorie'
+ *       404:
+ *         description: Catégorie non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir une catégorie spécifique
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', auth, async (req, res, next) => {
   try {
     const categorie = await Categorie.trouverParId(req.params.id);
     
@@ -77,7 +109,7 @@ router.get('/:id', async (req, res, next) => {
       });
     }
 
-    res.json({ categorie });
+    res.json(categorie);
   } catch (erreur) {
     next(erreur);
   }
@@ -139,7 +171,7 @@ router.get('/:id', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  */
 // Créer une nouvelle catégorie
-router.post('/', async (req, res, next) => {
+router.post('/', auth, async (req, res, next) => {
   try {
     const { name, color, type } = req.body;
 
@@ -183,8 +215,76 @@ router.post('/', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   put:
+ *     summary: Modifier une catégorie existante
+ *     tags: [Catégories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la catégorie à modifier
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - color
+ *               - type
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: Restaurant
+ *               color:
+ *                 type: string
+ *                 example: "#FF6B6B"
+ *               type:
+ *                 type: string
+ *                 enum: [revenu, depense]
+ *                 example: depense
+ *     responses:
+ *       200:
+ *         description: Catégorie modifiée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Catégorie modifiée avec succès
+ *                 categorie:
+ *                   $ref: '#/components/schemas/Categorie'
+ *       400:
+ *         description: Données invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Catégorie non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       409:
+ *         description: Catégorie avec ce nom existe déjà
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Modifier une catégorie
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', auth, async (req, res, next) => {
   try {
     const { name, color, type } = req.body;
 
@@ -237,8 +337,47 @@ router.put('/:id', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/categories/{id}:
+ *   delete:
+ *     summary: Supprimer une catégorie
+ *     tags: [Catégories]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID de la catégorie à supprimer
+ *     responses:
+ *       200:
+ *         description: Catégorie supprimée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Catégorie supprimée avec succès
+ *       400:
+ *         description: Impossible de supprimer la catégorie (utilisée dans des transactions)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Catégorie non trouvée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Supprimer une catégorie
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', auth, async (req, res, next) => {
   try {
     const categorie = await Categorie.trouverParId(req.params.id);
     

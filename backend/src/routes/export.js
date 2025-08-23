@@ -2,6 +2,7 @@ const express = require('express');
 const Transaction = require('../models/Transaction');
 const Categorie = require('../models/Categorie');
 const { auth } = require('../middleware/auth');
+const jsPDF = require('jspdf');
 
 const router = express.Router();
 
@@ -112,6 +113,154 @@ router.get('/transactions/csv', async (req, res, next) => {
     res.setHeader('Content-Length', Buffer.byteLength(contenuCSV, 'utf8'));
 
     res.send(contenuCSV);
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+/**
+ * @swagger
+ * /api/export/transactions/pdf:
+ *   get:
+ *     summary: Exporter les transactions en PDF
+ *     tags: [Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [revenu, depense]
+ *         description: Filtrer par type de transaction
+ *     responses:
+ *       200:
+ *         description: Fichier PDF généré avec succès
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *         headers:
+ *           Content-Disposition:
+ *             description: Nom du fichier de téléchargement
+ *             schema:
+ *               type: string
+ *               example: "attachment; filename=\"transactions_2024-01-01_2024-12-31.pdf\""
+ *       400:
+ *         description: Dates manquantes ou invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Exporter les transactions en PDF
+router.get('/transactions/pdf', async (req, res, next) => {
+  try {
+    const { startDate, endDate, type } = req.query;
+
+    if (!startDate || !endDate) {
+      return res.status(400).json({
+        message: 'Date de début et date de fin requises'
+      });
+    }
+
+    // Récupérer toutes les transactions de la période
+    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+      page: 1,
+      limit: 10000,
+      type,
+      startDate,
+      endDate
+    });
+
+    // Créer le PDF
+    const doc = new jsPDF.default();
+    
+    // Titre
+    doc.setFontSize(20);
+    doc.text('Rapport des Transactions - MoneyWise', 20, 20);
+    
+    // Informations de la période
+    doc.setFontSize(12);
+    doc.text(`Periode : ${startDate} a ${endDate}`, 20, 35);
+    doc.text(`Nombre de transactions : ${transactions.length}`, 20, 45);
+    
+    // En-têtes du tableau
+    doc.setFontSize(10);
+    doc.text('Date', 20, 60);
+    doc.text('Type', 50, 60);
+    doc.text('Montant', 80, 60);
+    doc.text('Catégorie', 120, 60);
+    doc.text('Description', 160, 60);
+    
+    // Lignes du tableau
+    let yPosition = 70;
+    transactions.forEach((transaction, index) => {
+      if (yPosition > 250) {
+        doc.addPage();
+        yPosition = 20;
+      }
+      
+      const typeTransaction = transaction.type === 'revenu' ? 'Revenu' : 'Depense';
+      const montant = transaction.type === 'revenu' ? `+${transaction.montant}` : `-${transaction.montant}`;
+      const categorie = transaction.nom_categorie || 'Non categorise';
+      const description = transaction.description || '';
+      
+      doc.text(String(transaction.date_transaction), 20, yPosition);
+      doc.text(String(typeTransaction), 50, yPosition);
+      doc.text(String(montant), 80, yPosition);
+      doc.text(String(categorie), 120, yPosition);
+      doc.text(String(description).substring(0, 30), 160, yPosition);
+      
+      yPosition += 10;
+    });
+    
+    // Résumé
+    const totalRevenus = transactions
+      .filter(t => t.type === 'revenu')
+      .reduce((sum, t) => sum + parseFloat(t.montant), 0);
+    const totalDepenses = transactions
+      .filter(t => t.type === 'depense')
+      .reduce((sum, t) => sum + parseFloat(t.montant), 0);
+    const solde = totalRevenus - totalDepenses;
+    
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.text('Résumé', 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Total Revenus : ${totalRevenus.toFixed(2)} €`, 20, 40);
+    doc.text(`Total Depenses : ${totalDepenses.toFixed(2)} €`, 20, 50);
+    doc.text(`Solde : ${solde.toFixed(2)} €`, 20, 60);
+    doc.text(`Genere le : ${new Date().toLocaleDateString('fr-FR')}`, 20, 80);
+
+    // Définir les headers pour le téléchargement
+    const nomFichier = `transactions_${startDate}_${endDate}.pdf`;
+    
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
+    
+    res.send(Buffer.from(doc.output('arraybuffer')));
   } catch (erreur) {
     next(erreur);
   }
