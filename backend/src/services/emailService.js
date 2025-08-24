@@ -92,6 +92,87 @@ class EmailService {
     }
   }
 
+  // Envoyer un email de vérification d'inscription
+  async envoyerEmailVerificationInscription({ email, prenom, nom, token }) {
+    // Réinitialiser le transporteur avec les variables d'environnement actuelles
+    this.initialiserTransporter();
+    const mailOptions = {
+      from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Vérifiez votre email - MoneyWise',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">MoneyWise</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Gestion de vos finances personnelles</p>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-bottom: 20px;">Bonjour ${prenom} ${nom} !</h2>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <div style="background: #ff9800; color: white; width: 80px; height: 80px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 32px;">
+                ✉️
+              </div>
+            </div>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Merci de vous être inscrit sur <strong>MoneyWise</strong> ! 
+              Pour activer votre compte et commencer à gérer vos finances, 
+              veuillez vérifier votre adresse email en cliquant sur le bouton ci-dessous.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}" 
+                 style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); 
+                        color: white; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 25px; 
+                        display: inline-block; 
+                        font-weight: bold;
+                        box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);">
+                Vérifier mon email
+              </a>
+            </div>
+            
+            <div style="background: #fff3e0; border-left: 4px solid #ff9800; padding: 15px; margin: 20px 0; border-radius: 4px;">
+              <p style="margin: 0; color: #e65100; font-size: 14px;">
+                <strong>⏰ Important :</strong> Ce lien expire dans <strong>24 heures</strong>.
+              </p>
+            </div>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Si vous n'avez pas créé de compte sur MoneyWise, ignorez simplement cet email.
+            </p>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
+            </p>
+            <p style="word-break: break-all; color: #ff9800; font-size: 12px; margin-bottom: 20px;">
+              ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}
+            </p>
+            
+            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+            
+            <p style="color: #999; font-size: 12px; text-align: center; margin: 0;">
+              Merci de nous faire confiance pour la gestion de vos finances personnelles.
+            </p>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('📧 Email de vérification d\'inscription envoyé:', info.messageId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur envoi email de vérification d\'inscription:', error);
+      throw new Error('Impossible d\'envoyer l\'email de vérification d\'inscription');
+    }
+  }
+
   // Envoyer un email de confirmation de changement de mot de passe
   async envoyerEmailConfirmation(email, prenom) {
     // Réinitialiser le transporteur avec les variables d'environnement actuelles

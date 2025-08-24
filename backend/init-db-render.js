@@ -30,6 +30,70 @@ async function initialiserBaseDeDonneesRender() {
             }
         }
         
+        // S'assurer que la table password_reset_tokens existe
+        const createTokensTableSQL = `
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id SERIAL PRIMARY KEY,
+                utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+                token VARCHAR(255) UNIQUE NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used BOOLEAN DEFAULT FALSE,
+                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        
+        try {
+            await query(createTokensTableSQL);
+            console.log('✅ Table password_reset_tokens vérifiée/créée');
+        } catch (err) {
+            if (err.code === '42710' || err.code === '42P07') {
+                console.log('⚠️ Table password_reset_tokens existe déjà');
+            } else {
+                console.error('❌ Erreur avec la table password_reset_tokens:', err.message);
+            }
+        }
+
+        // S'assurer que la table email_verification_tokens existe
+        const createEmailVerificationTableSQL = `
+            CREATE TABLE IF NOT EXISTS email_verification_tokens (
+                id SERIAL PRIMARY KEY,
+                utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+                token VARCHAR(255) UNIQUE NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                used BOOLEAN DEFAULT FALSE,
+                date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        `;
+        
+        try {
+            await query(createEmailVerificationTableSQL);
+            console.log('✅ Table email_verification_tokens vérifiée/créée');
+        } catch (err) {
+            if (err.code === '42710' || err.code === '42P07') {
+                console.log('⚠️ Table email_verification_tokens existe déjà');
+            } else {
+                console.error('❌ Erreur avec la table email_verification_tokens:', err.message);
+            }
+        }
+
+        // Ajouter les colonnes de vérification à la table utilisateurs si elles n'existent pas
+        const alterUsersTableSQL = `
+            ALTER TABLE utilisateurs 
+            ADD COLUMN IF NOT EXISTS email_verifie BOOLEAN DEFAULT FALSE,
+            ADD COLUMN IF NOT EXISTS token_verification VARCHAR(255) UNIQUE;
+        `;
+        
+        try {
+            await query(alterUsersTableSQL);
+            console.log('✅ Colonnes de vérification ajoutées à la table utilisateurs');
+        } catch (err) {
+            if (err.code === '42710' || err.code === '42P07') {
+                console.log('⚠️ Colonnes de vérification existent déjà');
+            } else {
+                console.error('❌ Erreur avec les colonnes de vérification:', err.message);
+            }
+        }
+        
         console.log('✅ Base de données initialisée avec succès sur Render !');
         
     } catch (erreur) {
