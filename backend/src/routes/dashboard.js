@@ -298,7 +298,7 @@ router.get('/charts', async (req, res, next) => {
  *         schema:
  *           type: string
  *           enum: [depense, revenu]
- *         description: Type de transaction (défaut: depense)
+ *         description: "Type de transaction (défaut: depense)"
  *         example: "depense"
  *       - in: query
  *         name: dateDebut
