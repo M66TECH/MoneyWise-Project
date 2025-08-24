@@ -33,9 +33,11 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:5173',  // Vite dev server
       'http://localhost:3000',  // Alternative port
+      'http://localhost:8000',  // Test frontend server
       'http://localhost:8080',  // Alternative port
       'http://127.0.0.1:5173',  // IP alternative
       'http://127.0.0.1:3000',  // IP alternative
+      'http://127.0.0.1:8000',  // IP alternative for test frontend
       process.env.FRONTEND_URL  // URL de production si définie
     ].filter(Boolean);
     

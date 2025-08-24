@@ -286,6 +286,106 @@ router.get('/charts', async (req, res, next) => {
 
 /**
  * @swagger
+ * /api/dashboard/category-breakdown:
+ *   get:
+ *     summary: Obtenir la répartition des dépenses par catégorie
+ *     tags: [Dashboard]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [depense, revenu]
+ *         description: "Type de transaction (défaut: depense)"
+ *         example: "depense"
+ *       - in: query
+ *         name: dateDebut
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (format YYYY-MM-DD)
+ *         example: "2024-01-01"
+ *       - in: query
+ *         name: dateFin
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (format YYYY-MM-DD)
+ *         example: "2024-12-31"
+ *     responses:
+ *       200:
+ *         description: Répartition par catégorie récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   nom_categorie:
+ *                     type: string
+ *                     example: "Courses"
+ *                   couleur_categorie:
+ *                     type: string
+ *                     example: "#FF5733"
+ *                   montant_total:
+ *                     type: number
+ *                     example: 450.75
+ *                   nombre_transactions:
+ *                     type: integer
+ *                     example: 12
+ *                   pourcentage:
+ *                     type: number
+ *                     example: 35.5
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Obtenir la répartition des dépenses par catégorie
+router.get('/category-breakdown', async (req, res, next) => {
+  try {
+    const { type = 'depense', dateDebut, dateFin } = req.query;
+    
+    // Si aucune date n'est spécifiée, utiliser le mois en cours
+    let dateDebutFinal, dateFinFinal;
+    if (!dateDebut || !dateFin) {
+      const maintenant = new Date();
+      dateDebutFinal = new Date(maintenant.getFullYear(), maintenant.getMonth(), 1).toISOString().split('T')[0];
+      dateFinFinal = new Date(maintenant.getFullYear(), maintenant.getMonth() + 1, 0).toISOString().split('T')[0];
+    } else {
+      dateDebutFinal = dateDebut;
+      dateFinFinal = dateFin;
+    }
+
+    const depensesParCategorie = await Transaction.obtenirDepensesParCategorie(
+      req.utilisateur_id,
+      dateDebutFinal,
+      dateFinFinal,
+      type
+    );
+
+    // Calculer le total pour les pourcentages
+    const total = depensesParCategorie.reduce((sum, item) => sum + parseFloat(item.montant_total || 0), 0);
+
+    // Ajouter les pourcentages
+    const resultat = depensesParCategorie.map(item => ({
+      ...item,
+      pourcentage: total > 0 ? ((parseFloat(item.montant_total || 0) / total) * 100).toFixed(1) : 0
+    }));
+
+    res.json(resultat);
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+/**
+ * @swagger
  * /api/dashboard/alerts:
  *   get:
  *     summary: Obtenir les alertes et notifications
