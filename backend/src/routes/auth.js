@@ -3,8 +3,10 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Utilisateur = require('../models/Utilisateur');
 const PasswordResetToken = require('../models/PasswordResetToken');
+const EmailVerificationToken = require('../models/EmailVerificationToken');
 const emailService = require('../services/emailService');
 const { auth } = require('../middleware/auth');
+const { query } = require('../config/database');
 
 const router = express.Router();
 
@@ -13,6 +15,65 @@ const router = express.Router();
  * tags:
  *   name: Authentification
  *   description: Gestion de l'authentification des utilisateurs
+ */
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Utilisateur:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *           example: 1
+ *         email:
+ *           type: string
+ *           format: email
+ *           example: user@example.com
+ *         prenom:
+ *           type: string
+ *           example: Jean
+ *         nom:
+ *           type: string
+ *           example: Dupont
+ *         email_verifie:
+ *           type: boolean
+ *           example: false
+ *         theme:
+ *           type: string
+ *           enum: [light, dark]
+ *           example: light
+ *         date_creation:
+ *           type: string
+ *           format: date-time
+ *           example: "2024-01-01T00:00:00.000Z"
+ *         date_modification:
+ *           type: string
+ *           format: date-time
+ *           example: "2024-01-01T00:00:00.000Z"
+ *     Error:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Message d'erreur
+ *     TokenResponse:
+ *       type: object
+ *       properties:
+ *         message:
+ *           type: string
+ *           example: Opération réussie
+ *         utilisateur:
+ *           $ref: '#/components/schemas/Utilisateur'
+ *         token:
+ *           type: string
+ *           example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *   securitySchemes:
+ *     bearerAuth:
+ *       type: http
+ *       scheme: bearer
+ *       bearerFormat: JWT
  */
 
 /**
@@ -49,7 +110,7 @@ const router = express.Router();
  *                 example: Dupont
  *     responses:
  *       201:
- *         description: Utilisateur créé avec succès
+ *         description: Utilisateur créé avec succès et email de vérification envoyé
  *         content:
  *           application/json:
  *             schema:
@@ -57,12 +118,15 @@ const router = express.Router();
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Utilisateur créé avec succès
+ *                   example: Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.
  *                 utilisateur:
  *                   $ref: '#/components/schemas/Utilisateur'
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       500:
+ *         description: Erreur lors de l'envoi de l'email de vérification
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *       400:
  *         description: Données invalides
  *         content:
@@ -96,7 +160,7 @@ router.post('/register', async (req, res, next) => {
       });
     }
 
-    // Créer le nouvel utilisateur
+    // Créer le nouvel utilisateur (non vérifié)
     const nouvelUtilisateur = await Utilisateur.creer({
       email,
       mot_de_passe: password,
@@ -104,17 +168,217 @@ router.post('/register', async (req, res, next) => {
       nom: lastName
     });
 
+    // Créer le token de vérification d'email
+    const verificationToken = await EmailVerificationToken.creer(nouvelUtilisateur.id);
+
+    // Envoyer l'email de vérification
+    try {
+      await emailService.envoyerEmailVerificationInscription({
+        email: nouvelUtilisateur.email,
+        prenom: nouvelUtilisateur.prenom,
+        nom: nouvelUtilisateur.nom,
+        token: verificationToken.token
+      });
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
+      // Supprimer l'utilisateur si l'email échoue
+      await query('DELETE FROM utilisateurs WHERE id = $1', [nouvelUtilisateur.id]);
+      return res.status(500).json({
+        message: 'Erreur lors de l\'envoi de l\'email de vérification. Veuillez réessayer.'
+      });
+    }
+
+    res.status(201).json({
+      message: 'Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.',
+      utilisateur: nouvelUtilisateur.toJSON()
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/verify-email:
+ *   post:
+ *     summary: Vérifier l'email d'un utilisateur
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 example: abc123def456...
+ *     responses:
+ *       200:
+ *         description: Email vérifié avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Email vérifié avec succès
+ *                 utilisateur:
+ *                   $ref: '#/components/schemas/Utilisateur'
+ *                 token:
+ *                   type: string
+ *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+ *       400:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Token non trouvé ou expiré
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Vérification d'email
+router.post('/verify-email', async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({
+        message: 'Token de vérification requis'
+      });
+    }
+
+    // Trouver le token de vérification
+    const verificationToken = await EmailVerificationToken.trouverParToken(token);
+    if (!verificationToken) {
+      return res.status(404).json({
+        message: 'Token de vérification invalide ou expiré'
+      });
+    }
+
+    // Trouver l'utilisateur
+    const utilisateur = await Utilisateur.trouverParId(verificationToken.utilisateur_id);
+    if (!utilisateur) {
+      return res.status(404).json({
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    // Vérifier l'email
+    await utilisateur.verifierEmail();
+    
+    // Marquer le token comme utilisé
+    await verificationToken.marquerCommeUtilise();
+
     // Générer le token JWT
-    const token = jwt.sign(
-      { utilisateur_id: nouvelUtilisateur.id },
+    const jwtToken = jwt.sign(
+      { utilisateur_id: utilisateur.id },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
 
-    res.status(201).json({
-      message: 'Utilisateur créé avec succès',
-      utilisateur: nouvelUtilisateur.toJSON(),
-      token
+    res.status(200).json({
+      message: 'Email vérifié avec succès ! Votre compte est maintenant actif.',
+      utilisateur: utilisateur.toJSON(),
+      token: jwtToken
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Renvoyer l'email de vérification
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: user@example.com
+ *     responses:
+ *       200:
+ *         description: Email de vérification renvoyé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Email de vérification renvoyé
+ *       400:
+ *         description: Email manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Utilisateur non trouvé ou déjà vérifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Renvoyer l'email de vérification
+router.post('/resend-verification', async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: 'Email requis'
+      });
+    }
+
+    // Trouver l'utilisateur non vérifié
+    const utilisateur = await Utilisateur.trouverParEmailNonVerifie(email);
+    if (!utilisateur) {
+      return res.status(404).json({
+        message: 'Utilisateur non trouvé ou email déjà vérifié'
+      });
+    }
+
+    // Supprimer les anciens tokens
+    await EmailVerificationToken.supprimerTokensUtilisateur(utilisateur.id);
+
+    // Créer un nouveau token
+    const verificationToken = await EmailVerificationToken.creer(utilisateur.id);
+
+    // Envoyer l'email de vérification
+    try {
+      await emailService.envoyerEmailVerificationInscription({
+        email: utilisateur.email,
+        prenom: utilisateur.prenom,
+        nom: utilisateur.nom,
+        token: verificationToken.token
+      });
+    } catch (emailError) {
+      console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
+      return res.status(500).json({
+        message: 'Erreur lors de l\'envoi de l\'email de vérification. Veuillez réessayer.'
+      });
+    }
+
+    res.status(200).json({
+      message: 'Email de vérification renvoyé avec succès'
     });
   } catch (erreur) {
     next(erreur);
@@ -172,6 +436,19 @@ router.post('/register', async (req, res, next) => {
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
+ *       403:
+ *         description: Email non vérifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Veuillez vérifier votre email avant de vous connecter. Vérifiez votre boîte de réception.
+ *                 emailNonVerifie:
+ *                   type: boolean
+ *                   example: true
  */
 // Connexion utilisateur
 router.post('/login', async (req, res, next) => {
@@ -198,6 +475,14 @@ router.post('/login', async (req, res, next) => {
     if (!motDePasseValide) {
       return res.status(401).json({
         message: 'Email ou mot de passe incorrect'
+      });
+    }
+
+    // Vérifier que l'email est vérifié
+    if (!utilisateur.email_verifie) {
+      return res.status(403).json({
+        message: 'Veuillez vérifier votre email avant de vous connecter. Vérifiez votre boîte de réception.',
+        emailNonVerifie: true
       });
     }
 
@@ -681,55 +966,6 @@ router.post('/reset-password', async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/auth/test-email:
- *   post:
- *     summary: Test de configuration email (développement uniquement)
- *     tags: [Authentification]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: test@example.com
- *     responses:
- *       200:
- *         description: Test email envoyé
- *       500:
- *         description: Erreur de configuration email
- */
-// Test de configuration email (à supprimer en production)
-if (process.env.NODE_ENV === 'development') {
-  router.post('/test-email', async (req, res, next) => {
-    try {
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: 'Email requis' });
-      }
 
-      // Test de connexion
-      const configValide = await emailService.testerConnexion();
-      if (!configValide) {
-        return res.status(500).json({ message: 'Configuration email invalide' });
-      }
-
-      // Envoyer un email de test
-      await emailService.envoyerEmailRecuperation(email, 'Test', 'test_token_123');
-      
-      res.json({ message: 'Test email envoyé avec succès' });
-    } catch (erreur) {
-      next(erreur);
-    }
-  });
-}
 
 module.exports = router;

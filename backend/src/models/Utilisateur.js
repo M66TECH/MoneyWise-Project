@@ -8,6 +8,8 @@ class Utilisateur {
         this.mot_de_passe = donnees.mot_de_passe;
         this.prenom = donnees.prenom;
         this.nom = donnees.nom;
+        this.email_verifie = donnees.email_verifie || false;
+        this.token_verification = donnees.token_verification;
         this.date_creation = donnees.date_creation;
         this.date_modification = donnees.date_modification;
     }
@@ -17,7 +19,7 @@ class Utilisateur {
         const mot_de_passe_hash = await bcrypt.hash(mot_de_passe, 12);
         
         const resultat = await query(
-            'INSERT INTO utilisateurs (email, mot_de_passe, prenom, nom) VALUES ($1, $2, $3, $4) RETURNING *',
+            'INSERT INTO utilisateurs (email, mot_de_passe, prenom, nom, email_verifie) VALUES ($1, $2, $3, $4, FALSE) RETURNING *',
             [email, mot_de_passe_hash, prenom, nom]
         );
         
@@ -58,6 +60,21 @@ class Utilisateur {
 
     async comparerMotDePasse(mot_de_passe) {
         return await bcrypt.compare(mot_de_passe, this.mot_de_passe);
+    }
+
+    async verifierEmail() {
+        const resultat = await query(
+            'UPDATE utilisateurs SET email_verifie = TRUE, token_verification = NULL WHERE id = $1 RETURNING *',
+            [this.id]
+        );
+        
+        Object.assign(this, resultat.rows[0]);
+        return this;
+    }
+
+    static async trouverParEmailNonVerifie(email) {
+        const resultat = await query('SELECT * FROM utilisateurs WHERE email = $1 AND email_verifie = FALSE', [email]);
+        return resultat.rows[0] ? new Utilisateur(resultat.rows[0]) : null;
     }
 
     toJSON() {

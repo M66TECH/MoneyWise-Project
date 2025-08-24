@@ -88,11 +88,19 @@ CONFIGURATION_EMAIL.md
 tests-postman-corriges.md
 RESUME_CORRECTIONS_POSTMAN.md
 CORRECTIONS_FRANCISATION.md
+ANALYSE_SECURITE_ET_VALIDATION.md
+CONFIGURATION_CORS_VERCEL.md
+
 
 # Postman collections (local development)
 MoneyWise_Postman_Collection*.json
 MoneyWise-API*.json
 *postman*.json
+SWAGGER_DOCUMENTATION.md
+RAPPORT_TECHNIQUE_MONEYWISE.md
+README_DATABASE.md
+RESUME_EXECUTIF_MONEYWISE.md
+SWAGGER_DOCUMENTATION.md
 
 # Local configuration files
 .env.example

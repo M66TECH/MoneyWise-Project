@@ -38,6 +38,7 @@ app.use(cors({
       'http://127.0.0.1:5173',  // IP alternative
       'http://127.0.0.1:3000',  // IP alternative
       'http://127.0.0.1:8000',  // IP alternative for test frontend
+      'https://moneywise.vercel.app',  // Frontend production Vercel
       process.env.FRONTEND_URL  // URL de production si définie
     ].filter(Boolean);
     

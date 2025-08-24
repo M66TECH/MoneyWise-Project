@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     prenom VARCHAR(100) NOT NULL,
     nom VARCHAR(100) NOT NULL,
     theme VARCHAR(10) DEFAULT 'light' CHECK (theme IN ('light', 'dark')),
+    email_verifie BOOLEAN DEFAULT FALSE,
+    token_verification VARCHAR(255) UNIQUE,
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -40,6 +42,16 @@ CREATE TABLE IF NOT EXISTS transactions (
 
 -- Table des tokens de réinitialisation de mot de passe
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table des tokens de vérification d'email
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
     id SERIAL PRIMARY KEY,
     utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
     token VARCHAR(255) UNIQUE NOT NULL,
