@@ -107,7 +107,7 @@ class Transaction {
         return resultat.rows[0].obtenir_statistiques_mensuelles;
     }
 
-    static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin) {
+    static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin, type = 'depense') {
         const resultat = await query(`
             SELECT 
                 c.id as categorie_id,
@@ -118,13 +118,13 @@ class Transaction {
             FROM categories c
             LEFT JOIN transactions t ON c.id = t.categorie_id 
                 AND t.utilisateur_id = $1 
-                AND t.type = 'depense'
+                AND t.type = $4
                 AND t.date_transaction >= $2 
                 AND t.date_transaction <= $3
-            WHERE c.utilisateur_id = $1 AND c.type = 'depense'
+            WHERE c.utilisateur_id = $1 AND c.type = $4
             GROUP BY c.id, c.nom, c.couleur
             ORDER BY montant_total DESC NULLS LAST
-        `, [utilisateur_id, dateDebut, dateFin]);
+        `, [utilisateur_id, dateDebut, dateFin, type]);
         
         return resultat.rows;
     }
