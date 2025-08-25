@@ -130,14 +130,14 @@ router.get('/:id', auth, async (req, res, next) => {
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - color
+ *               - nom
+ *               - couleur
  *               - type
  *             properties:
- *               name:
+ *               nom:
  *                 type: string
  *                 example: Restaurant
- *               color:
+ *               couleur:
  *                 type: string
  *                 example: "#FF6B6B"
  *               type:
@@ -173,10 +173,10 @@ router.get('/:id', auth, async (req, res, next) => {
 // Créer une nouvelle catégorie
 router.post('/', auth, async (req, res, next) => {
   try {
-    const { name, color, type } = req.body;
+    const { nom, couleur, type } = req.body;
 
     // Validation des données
-    if (!name || !color || !type) {
+    if (!nom || !couleur || !type) {
       return res.status(400).json({
         message: 'Nom, couleur et type sont requis'
       });
@@ -190,7 +190,7 @@ router.post('/', auth, async (req, res, next) => {
 
     // Vérifier si une catégorie avec le même nom existe déjà
     const categoriesExistant = await Categorie.trouverParUtilisateur(req.utilisateur_id);
-    const categorieExistant = categoriesExistant.find(cat => cat.nom.toLowerCase() === name.toLowerCase());
+    const categorieExistant = categoriesExistant.find(cat => cat.nom.toLowerCase() === nom.toLowerCase());
     
     if (categorieExistant) {
       return res.status(409).json({
@@ -201,8 +201,8 @@ router.post('/', auth, async (req, res, next) => {
     // Créer la catégorie
     const nouvelleCategorie = await Categorie.creer({
       utilisateur_id: req.utilisateur_id,
-      nom: name,
-      couleur: color,
+      nom: nom,
+      couleur: couleur,
       type
     });
 
@@ -237,14 +237,14 @@ router.post('/', auth, async (req, res, next) => {
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - color
+ *               - nom
+ *               - couleur
  *               - type
  *             properties:
- *               name:
+ *               nom:
  *                 type: string
  *                 example: Restaurant
- *               color:
+ *               couleur:
  *                 type: string
  *                 example: "#FF6B6B"
  *               type:
@@ -286,7 +286,7 @@ router.post('/', auth, async (req, res, next) => {
 // Modifier une catégorie
 router.put('/:id', auth, async (req, res, next) => {
   try {
-    const { name, color, type } = req.body;
+    const { nom, couleur, type } = req.body;
 
     // Trouver la catégorie
     const categorie = await Categorie.trouverParId(req.params.id);
@@ -297,7 +297,7 @@ router.put('/:id', auth, async (req, res, next) => {
     }
 
     // Validation des données
-    if (!name || !color || !type) {
+    if (!nom || !couleur || !type) {
       return res.status(400).json({
         message: 'Nom, couleur et type sont requis'
       });
@@ -312,7 +312,7 @@ router.put('/:id', auth, async (req, res, next) => {
     // Vérifier si une autre catégorie avec le même nom existe déjà
     const categoriesExistant = await Categorie.trouverParUtilisateur(req.utilisateur_id);
     const categorieExistant = categoriesExistant.find(cat => 
-      cat.id !== categorie.id && cat.nom.toLowerCase() === name.toLowerCase()
+      cat.id !== categorie.id && cat.nom.toLowerCase() === nom.toLowerCase()
     );
     
     if (categorieExistant) {
@@ -323,8 +323,8 @@ router.put('/:id', auth, async (req, res, next) => {
 
     // Mettre à jour la catégorie
     await categorie.mettreAJour({
-      nom: name,
-      couleur: color,
+      nom: nom,
+      couleur: couleur,
       type
     });
 
