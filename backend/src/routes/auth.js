@@ -108,10 +108,7 @@ const router = express.Router();
  *         email_verifie:
  *           type: boolean
  *           example: false
- *         theme:
- *           type: string
- *           enum: [light, dark]
- *           example: light
+
  *         date_creation:
  *           type: string
  *           format: date-time
@@ -713,69 +710,7 @@ router.put('/profile', auth, async (req, res, next) => {
   }
 });
 
-/**
- * @swagger
- * /api/auth/profile/theme:
- *   put:
- *     summary: Changer le thème de l'utilisateur
- *     tags: [Authentification]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - theme
- *             properties:
- *               theme:
- *                 type: string
- *                 enum: [light, dark]
- *                 example: dark
- *     responses:
- *       200:
- *         description: Thème mis à jour avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Thème mis à jour avec succès
- *                 utilisateur:
- *                   $ref: '#/components/schemas/Utilisateur'
- *       400:
- *         description: Données invalides
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-// Changer le thème
-router.put('/profile/theme', auth, async (req, res, next) => {
-  try {
-    const { theme } = req.body;
 
-    if (!theme || !['light', 'dark'].includes(theme)) {
-      return res.status(400).json({
-        message: 'Thème doit être "light" ou "dark"'
-      });
-    }
-
-    // Mettre à jour le thème (à implémenter dans le modèle Utilisateur)
-    await req.utilisateur.mettreAJourTheme(theme);
-
-    res.json({
-      message: 'Thème mis à jour avec succès',
-      utilisateur: req.utilisateur.toJSON()
-    });
-  } catch (erreur) {
-    next(erreur);
-  }
-});
 
 /**
  * @swagger

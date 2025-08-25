@@ -93,6 +93,23 @@ async function initialiserBaseDeDonneesRender() {
                 console.error('❌ Erreur avec les colonnes de vérification:', err.message);
             }
         }
+
+        // Ajouter la colonne photo_profil à la table utilisateurs si elle n'existe pas
+        const alterPhotoProfilSQL = `
+            ALTER TABLE utilisateurs 
+            ADD COLUMN IF NOT EXISTS photo_profil VARCHAR(500);
+        `;
+        
+        try {
+            await query(alterPhotoProfilSQL);
+            console.log('✅ Colonne photo_profil ajoutée à la table utilisateurs');
+        } catch (err) {
+            if (err.code === '42710' || err.code === '42P07') {
+                console.log('⚠️ Colonne photo_profil existe déjà');
+            } else {
+                console.error('❌ Erreur avec la colonne photo_profil:', err.message);
+            }
+        }
         
         console.log('✅ Base de données initialisée avec succès sur Render !');
         
