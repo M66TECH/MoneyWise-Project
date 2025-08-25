@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpecs = require('./config/swagger');
 const authRoutes = require('./routes/auth');
@@ -71,6 +72,22 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/profil', profilRoutes);
+
+// Servir les fichiers statiques des photos de profil (développement local)
+app.use('/api/profil/photo', express.static(path.join(__dirname, '../uploads/profiles')));
+
+// Route spécifique pour servir les photos de profil par nom de fichier
+app.get('/api/profil/photo/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(__dirname, '../uploads/profiles', filename);
+  
+  // Vérifier si le fichier existe
+  if (require('fs').existsSync(filePath)) {
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ message: 'Photo de profil non trouvée' });
+  }
+});
 
 /**
  * @swagger
