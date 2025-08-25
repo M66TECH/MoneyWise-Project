@@ -110,6 +110,47 @@ async function initialiserBaseDeDonneesRender() {
                 console.error('❌ Erreur avec la colonne photo_profil:', err.message);
             }
         }
+
+        // Migration pour ajouter le type "hybride" aux catégories
+        console.log('🔄 Migration pour ajouter le type "hybride" aux catégories...');
+        
+        // Supprimer les contraintes CHECK existantes
+        try {
+            await query(`ALTER TABLE categories DROP CONSTRAINT IF EXISTS categories_type_check;`);
+            console.log('✅ Contrainte CHECK supprimée pour categories');
+        } catch (err) {
+            console.log('⚠️ Contrainte CHECK categories déjà supprimée ou inexistante');
+        }
+        
+        try {
+            await query(`ALTER TABLE transactions DROP CONSTRAINT IF EXISTS transactions_type_check;`);
+            console.log('✅ Contrainte CHECK supprimée pour transactions');
+        } catch (err) {
+            console.log('⚠️ Contrainte CHECK transactions déjà supprimée ou inexistante');
+        }
+        
+        // Ajouter les nouvelles contraintes avec le type "hybride"
+        try {
+            await query(`
+                ALTER TABLE categories 
+                ADD CONSTRAINT categories_type_check 
+                CHECK (type IN ('revenu', 'depense', 'hybride'));
+            `);
+            console.log('✅ Nouvelle contrainte CHECK ajoutée pour categories');
+        } catch (err) {
+            console.log('⚠️ Contrainte CHECK categories existe déjà');
+        }
+        
+        try {
+            await query(`
+                ALTER TABLE transactions 
+                ADD CONSTRAINT transactions_type_check 
+                CHECK (type IN ('revenu', 'depense'));
+            `);
+            console.log('✅ Nouvelle contrainte CHECK ajoutée pour transactions');
+        } catch (err) {
+            console.log('⚠️ Contrainte CHECK transactions existe déjà');
+        }
         
         console.log('✅ Base de données initialisée avec succès sur Render !');
         
