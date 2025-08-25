@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS utilisateurs (
     prenom VARCHAR(100) NOT NULL,
     nom VARCHAR(100) NOT NULL,
     photo_profil VARCHAR(500),
-    theme VARCHAR(10) DEFAULT 'light' CHECK (theme IN ('light', 'dark')),
     email_verifie BOOLEAN DEFAULT FALSE,
     token_verification VARCHAR(255) UNIQUE,
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
