@@ -8,6 +8,7 @@ const transactionRoutes = require('./routes/transactions');
 const categoryRoutes = require('./routes/categories');
 const dashboardRoutes = require('./routes/dashboard');
 const exportRoutes = require('./routes/export');
+const profilRoutes = require('./routes/profil');
 const { errorHandler } = require('./middleware/errorHandler');
 
 const { initialiserBaseDeDonneesRender } = require('../init-db-render');
@@ -69,6 +70,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
+app.use('/api/profil', profilRoutes);
 
 /**
  * @swagger

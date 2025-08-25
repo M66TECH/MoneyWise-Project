@@ -33,18 +33,69 @@ const options = {
         }
       },
       schemas: {
-                 Utilisateur: {
-           type: 'object',
-           properties: {
-             id: { type: 'integer', example: 1 },
-             email: { type: 'string', format: 'email', example: 'user@example.com' },
-             prenom: { type: 'string', example: 'Jean' },
-             nom: { type: 'string', example: 'Dupont' },
-             theme: { type: 'string', enum: ['light', 'dark'], example: 'light' },
-             date_creation: { type: 'string', format: 'date-time' },
-             date_modification: { type: 'string', format: 'date-time' }
-           }
-         },
+        Utilisateur: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer', example: 1 },
+            email: { type: 'string', format: 'email', example: 'user@example.com' },
+            prenom: { type: 'string', example: 'Jean' },
+            nom: { type: 'string', example: 'Dupont' },
+            photo_profil: { 
+              type: 'string', 
+              example: '{"url":"https://res.cloudinary.com/cloud_name/image/upload/v1234567890/moneywise/profiles/user-1-profile.jpg","public_id":"moneywise/profiles/user-1-profile"}',
+              description: 'Données de la photo de profil (JSON string)'
+            },
+            theme: { type: 'string', enum: ['light', 'dark'], example: 'light' },
+            email_verifie: { type: 'boolean', example: true },
+            date_creation: { type: 'string', format: 'date-time' },
+            date_modification: { type: 'string', format: 'date-time' }
+          }
+        },
+        PhotoProfil: {
+          type: 'object',
+          properties: {
+            url: { 
+              type: 'string', 
+              example: 'https://res.cloudinary.com/cloud_name/image/upload/v1234567890/moneywise/profiles/user-1-profile.jpg',
+              description: 'URL de la photo de profil'
+            },
+            public_id: { 
+              type: 'string', 
+              example: 'moneywise/profiles/user-1-profile',
+              description: 'ID public Cloudinary (pour la production)'
+            },
+            type: { 
+              type: 'string', 
+              enum: ['local', 'cloudinary'],
+              example: 'cloudinary',
+              description: 'Type de stockage'
+            }
+          }
+        },
+        UploadPhotoResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Photo de profil mise à jour avec succès' },
+            photo_profil: {
+              $ref: '#/components/schemas/PhotoProfil'
+            },
+            photo_url: { 
+              type: 'string', 
+              example: 'https://res.cloudinary.com/cloud_name/image/upload/v1234567890/moneywise/profiles/user-1-profile.jpg',
+              description: 'URL directe vers l\'image'
+            }
+          }
+        },
+        ProfilResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            utilisateur: {
+              $ref: '#/components/schemas/Utilisateur'
+            }
+          }
+        },
         Categorie: {
           type: 'object',
           properties: {

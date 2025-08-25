@@ -1,12 +1,80 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const path = require('path');
+const fs = require('fs');
 const Utilisateur = require('../models/Utilisateur');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
 const emailService = require('../services/emailService');
+const CloudinaryService = require('../services/cloudinaryService');
 const { auth } = require('../middleware/auth');
 const { query } = require('../config/database');
+
+// Configuration multer pour l'upload de photos
+const multer = require('multer');
+
+// Configuration du stockage local (pour développement)
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = path.join(__dirname, '../../uploads/profiles');
+    
+    // Créer le dossier s'il n'existe pas
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    // Générer un nom de fichier unique avec timestamp
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const extension = path.extname(file.originalname);
+    cb(null, 'profile-' + uniqueSuffix + extension);
+  }
+});
+
+// Configuration du stockage mémoire (pour Cloudinary)
+const memoryStorage = multer.memoryStorage();
+
+// Filtre pour les types de fichiers autorisés
+const fileFilter = (req, file, cb) => {
+  // Vérifier le type MIME
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Seules les images sont autorisées'), false);
+  }
+};
+
+// Configuration de multer pour stockage local
+const uploadLocal = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  }
+});
+
+// Configuration de multer pour Cloudinary (stockage en mémoire)
+const uploadCloudinary = multer({
+  storage: memoryStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB max
+  }
+});
+
+// Middleware pour uploader une photo de profil (choix automatique)
+const uploadPhotoProfil = (req, res, next) => {
+  // Utiliser Cloudinary en production si configuré
+  if (process.env.NODE_ENV === 'production' && CloudinaryService.isConfigured()) {
+    return uploadCloudinary.single('photo_profil')(req, res, next);
+  } else {
+    // Utiliser le stockage local en développement
+    return uploadLocal.single('photo_profil')(req, res, next);
+  }
+};
 
 const router = express.Router();
 
@@ -141,7 +209,7 @@ const router = express.Router();
  *               $ref: '#/components/schemas/Error'
  */
 // Inscription d'un nouvel utilisateur
-router.post('/register', async (req, res, next) => {
+router.post('/register', uploadPhotoProfil, async (req, res, next) => {
   try {
     const { email, password, firstName, lastName } = req.body;
 
@@ -167,6 +235,38 @@ router.post('/register', async (req, res, next) => {
       prenom: firstName,
       nom: lastName
     });
+
+    // Gérer l'upload de photo de profil si fournie
+    if (req.file) {
+      try {
+        let photoUrl, photoData;
+
+        // Gestion selon l'environnement
+        if (process.env.NODE_ENV === 'production' && CloudinaryService.isConfigured()) {
+          // Upload vers Cloudinary
+          const cloudinaryResult = await CloudinaryService.uploadImage(req.file.buffer);
+          photoUrl = cloudinaryResult.url;
+          photoData = {
+            url: photoUrl,
+            public_id: cloudinaryResult.public_id
+          };
+
+          await nouvelUtilisateur.mettreAJourPhotoProfilCloudinary(photoUrl, cloudinaryResult.public_id);
+        } else {
+          // Stockage local
+          const cheminPhoto = `uploads/profiles/${req.file.filename}`;
+          await nouvelUtilisateur.mettreAJourPhotoProfil(cheminPhoto);
+          photoUrl = cheminPhoto;
+          photoData = { url: photoUrl, type: 'local' };
+        }
+
+        // Mettre à jour l'utilisateur avec les données de photo
+        nouvelUtilisateur.photo_profil = JSON.stringify(photoData);
+      } catch (photoError) {
+        console.error('Erreur lors de l\'upload de la photo de profil:', photoError);
+        // Continuer sans la photo si l'upload échoue
+      }
+    }
 
     // Créer le token de vérification d'email
     const verificationToken = await EmailVerificationToken.creer(nouvelUtilisateur.id);
