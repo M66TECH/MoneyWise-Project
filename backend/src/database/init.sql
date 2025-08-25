@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS categories (
     utilisateur_id INTEGER NOT NULL REFERENCES utilisateurs(id) ON DELETE CASCADE,
     nom VARCHAR(100) NOT NULL,
     couleur VARCHAR(7) NOT NULL DEFAULT '#6B7280', -- Format hex color
-    type VARCHAR(20) NOT NULL CHECK (type IN ('revenu', 'depense')),
+    type VARCHAR(20) NOT NULL CHECK (type IN ('revenu', 'depense', 'hybride')),
     date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(utilisateur_id, nom)

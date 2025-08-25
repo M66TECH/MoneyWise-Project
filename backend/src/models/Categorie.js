@@ -88,7 +88,12 @@ class Categorie {
             { nom: 'Santé', couleur: '#84CC16', type: 'depense' },
             { nom: 'Shopping', couleur: '#F97316', type: 'depense' },
             { nom: 'Factures', couleur: '#6366F1', type: 'depense' },
-            { nom: 'Autres dépenses', couleur: '#6B7280', type: 'depense' }
+            { nom: 'Autres dépenses', couleur: '#6B7280', type: 'depense' },
+            
+            // Catégories hybrides (peuvent contenir revenus ET dépenses)
+            { nom: 'Business', couleur: '#059669', type: 'hybride' },
+            { nom: 'Projets', couleur: '#7C3AED', type: 'hybride' },
+            { nom: 'Événements', couleur: '#DC2626', type: 'hybride' }
         ];
 
         const categoriesCreees = [];

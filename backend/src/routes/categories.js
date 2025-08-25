@@ -27,7 +27,7 @@ router.use(auth);
  *         name: type
  *         schema:
  *           type: string
- *           enum: [revenu, depense]
+ *           enum: [revenu, depense, hybride]
  *         description: Filtrer par type de catégorie
  *     responses:
  *       200:
@@ -142,7 +142,7 @@ router.get('/:id', auth, async (req, res, next) => {
  *                 example: "#FF6B6B"
  *               type:
  *                 type: string
- *                 enum: [revenu, depense]
+ *                 enum: [revenu, depense, hybride]
  *                 example: depense
  *     responses:
  *       201:
@@ -182,9 +182,9 @@ router.post('/', auth, async (req, res, next) => {
       });
     }
 
-    if (!['revenu', 'depense'].includes(type)) {
+    if (!['revenu', 'depense', 'hybride'].includes(type)) {
       return res.status(400).json({
-        message: 'Le type doit être "revenu" ou "depense"'
+        message: 'Le type doit être "revenu", "depense" ou "hybride"'
       });
     }
 
@@ -249,7 +249,7 @@ router.post('/', auth, async (req, res, next) => {
  *                 example: "#FF6B6B"
  *               type:
  *                 type: string
- *                 enum: [revenu, depense]
+ *                 enum: [revenu, depense, hybride]
  *                 example: depense
  *     responses:
  *       200:
@@ -303,9 +303,9 @@ router.put('/:id', auth, async (req, res, next) => {
       });
     }
 
-    if (!['revenu', 'depense'].includes(type)) {
+    if (!['revenu', 'depense', 'hybride'].includes(type)) {
       return res.status(400).json({
-        message: 'Le type doit être "revenu" ou "depense"'
+        message: 'Le type doit être "revenu", "depense" ou "hybride"'
       });
     }
 
