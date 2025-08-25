@@ -8,6 +8,7 @@ class Utilisateur {
         this.mot_de_passe = donnees.mot_de_passe;
         this.prenom = donnees.prenom;
         this.nom = donnees.nom;
+        this.photo_profil = donnees.photo_profil;
         this.email_verifie = donnees.email_verifie || false;
         this.token_verification = donnees.token_verification;
         this.date_creation = donnees.date_creation;
@@ -47,6 +48,31 @@ class Utilisateur {
         return this;
     }
 
+    async mettreAJourPhotoProfil(cheminPhoto) {
+        const resultat = await query(
+            'UPDATE utilisateurs SET photo_profil = $1, date_modification = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+            [cheminPhoto, this.id]
+        );
+        
+        Object.assign(this, resultat.rows[0]);
+        return this;
+    }
+
+    async mettreAJourPhotoProfilCloudinary(urlPhoto, publicId = null) {
+        const photoData = {
+            url: urlPhoto,
+            public_id: publicId
+        };
+        
+        const resultat = await query(
+            'UPDATE utilisateurs SET photo_profil = $1, date_modification = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *',
+            [JSON.stringify(photoData), this.id]
+        );
+        
+        Object.assign(this, resultat.rows[0]);
+        return this;
+    }
+
     async changerMotDePasse(nouveau_mot_de_passe) {
         const mot_de_passe_hash = await bcrypt.hash(nouveau_mot_de_passe, 12);
         const resultat = await query(
@@ -80,6 +106,35 @@ class Utilisateur {
     toJSON() {
         const { mot_de_passe, ...utilisateurSansMotDePasse } = this;
         return utilisateurSansMotDePasse;
+    }
+
+    getPhotoProfilData() {
+        if (!this.photo_profil) {
+            return null;
+        }
+
+        try {
+            // Essayer de parser comme JSON (Cloudinary)
+            const parsed = JSON.parse(this.photo_profil);
+            return parsed;
+        } catch (error) {
+            // Si ce n'est pas du JSON, c'est un chemin local
+            return {
+                url: this.photo_profil,
+                public_id: null,
+                type: 'local'
+            };
+        }
+    }
+
+    getPhotoProfilUrl() {
+        const photoData = this.getPhotoProfilData();
+        return photoData ? photoData.url : null;
+    }
+
+    getPhotoProfilPublicId() {
+        const photoData = this.getPhotoProfilData();
+        return photoData ? photoData.public_id : null;
     }
 }
 

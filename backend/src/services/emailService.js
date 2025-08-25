@@ -20,7 +20,10 @@ class EmailService {
   async envoyerEmailRecuperation(email, prenom, resetToken) {
     // Réinitialiser le transporteur avec les variables d'environnement actuelles
     this.initialiserTransporter();
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+    
+    // Déterminer l'URL frontend selon l'environnement
+    const frontendUrl = this.getFrontendUrl();
+    const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
@@ -96,6 +99,10 @@ class EmailService {
   async envoyerEmailVerificationInscription({ email, prenom, nom, token }) {
     // Réinitialiser le transporteur avec les variables d'environnement actuelles
     this.initialiserTransporter();
+    
+    // Déterminer l'URL frontend selon l'environnement
+    const frontendUrl = this.getFrontendUrl();
+    
     const mailOptions = {
       from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -123,7 +130,7 @@ class EmailService {
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}" 
+              <a href="${frontendUrl}/verify-email?token=${token}" 
                  style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); 
                         color: white; 
                         padding: 15px 30px; 
@@ -150,7 +157,7 @@ class EmailService {
               Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
             </p>
             <p style="word-break: break-all; color: #ff9800; font-size: 12px; margin-bottom: 20px;">
-              ${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${token}
+              ${frontendUrl}/verify-email?token=${token}
             </p>
             
             <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
@@ -245,6 +252,23 @@ class EmailService {
       console.error('❌ Erreur configuration email:', error);
       return false;
     }
+  }
+
+  // Helper to get the frontend URL based on environment
+  getFrontendUrl() {
+    // Si FRONTEND_URL est explicitement définie, l'utiliser
+    if (process.env.FRONTEND_URL) {
+      return process.env.FRONTEND_URL;
+    }
+    
+    // Sinon, utiliser des valeurs par défaut selon l'environnement
+    if (process.env.NODE_ENV === 'development') {
+      // En développement, essayer plusieurs ports courants
+      return 'http://localhost:5173'; // Vite par défaut
+    }
+    
+    // En production, utiliser l'URL Vercel
+    return 'https://moneywise.vercel.app';
   }
 }
 
