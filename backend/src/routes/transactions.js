@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const Transaction = require('../models/Transaction');
 const Categorie = require('../models/Categorie');
 const { auth } = require('../middleware/auth');
@@ -9,10 +9,10 @@ const router = express.Router();
  * @swagger
  * tags:
  *   name: Transactions
- *   description: Gestion des transactions financiÃ¨res
+ *   description: Gestion des transactions financières
  */
 
-// Appliquer l'authentification Ã  toutes les routes
+// Appliquer l'authentification à toutes les routes
 router.use(auth);
 
 /**
@@ -29,13 +29,13 @@ router.use(auth);
  *         schema:
  *           type: integer
  *           default: 1
- *         description: NumÃ©ro de page
+ *         description: Numéro de page
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 20
- *         description: Nombre d'Ã©lÃ©ments par page
+ *         description: Nombre d'éléments par page
  *       - in: query
  *         name: type
  *         schema:
@@ -46,13 +46,13 @@ router.use(auth);
  *         name: categoryId
  *         schema:
  *           type: integer
- *         description: Filtrer par ID de catÃ©gorie
+ *         description: Filtrer par ID de catégorie
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
- *         description: Date de dÃ©but (YYYY-MM-DD)
+ *         description: Date de début (YYYY-MM-DD)
  *       - in: query
  *         name: endDate
  *         schema:
@@ -61,7 +61,7 @@ router.use(auth);
  *         description: Date de fin (YYYY-MM-DD)
  *     responses:
  *       200:
- *         description: Liste des transactions rÃ©cupÃ©rÃ©e avec succÃ¨s
+ *         description: Liste des transactions récupérée avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -111,14 +111,14 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-// Obtenir une transaction spÃ©cifique
+// Obtenir une transaction spécifique
 router.get('/:id', auth, async (req, res, next) => {
   try {
     const transaction = await Transaction.trouverParId(req.params.id, req.utilisateur_id);
     
     if (!transaction) {
       return res.status(404).json({
-        message: 'Transaction non trouvÃ©e'
+        message: 'Transaction non trouvée'
       });
     }
 
@@ -132,7 +132,7 @@ router.get('/:id', auth, async (req, res, next) => {
  * @swagger
  * /api/transactions:
  *   post:
- *     summary: CrÃ©er une nouvelle transaction
+ *     summary: Créer une nouvelle transaction
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
@@ -161,14 +161,14 @@ router.get('/:id', auth, async (req, res, next) => {
  *                 example: 1
  *               description:
  *                 type: string
- *                 example: DÃ©jeuner au restaurant
+ *                 example: Déjeuner au restaurant
  *               date:
  *                 type: string
  *                 format: date
  *                 example: "2024-08-21"
  *     responses:
  *       201:
- *         description: Transaction crÃ©Ã©e avec succÃ¨s
+ *         description: Transaction créée avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -176,47 +176,47 @@ router.get('/:id', auth, async (req, res, next) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Transaction crÃ©Ã©e avec succÃ¨s
+ *                   example: Transaction créée avec succès
  *                 transaction:
  *                   $ref: '#/components/schemas/Transaction'
  *       400:
- *         description: DonnÃ©es invalides
+ *         description: Données invalides
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: CatÃ©gorie non trouvÃ©e
+ *         description: Catégorie non trouvée
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-// CrÃ©er une nouvelle transaction
+// Créer une nouvelle transaction
 router.post('/', auth, async (req, res, next) => {
   try {
     const { type, amount, categoryId, description, date } = req.body;
 
-    // Validation des donnÃ©es
+    // Validation des données
     if (!type || !amount || !categoryId || !date) {
       return res.status(400).json({
-        message: 'Type, montant, catÃ©gorie et date sont requis'
+        message: 'Type, montant, catégorie et date sont requis'
       });
     }
 
     if (!['revenu', 'depense'].includes(type)) {
       return res.status(400).json({
-        message: 'Le type doit Ãªtre "revenu" ou "depense"'
+        message: 'Le type doit être "revenu" ou "depense"'
       });
     }
 
     if (amount <= 0) {
       return res.status(400).json({
-        message: 'Le montant doit Ãªtre positif'
+        message: 'Le montant doit être positif'
       });
     }
 
-    // VÃ©rifier que la catÃ©gorie appartient Ã  l'utilisateur et correspond au type
+    // Vérifier que la catégorie appartient à l'utilisateur et correspond au type
     const categorie = await Categorie.trouverParId(categoryId);
     if (!categorie || categorie.utilisateur_id !== req.utilisateur_id) {
       return res.status(404).json({
@@ -250,7 +250,7 @@ router.post('/', auth, async (req, res, next) => {
     });
 
     res.status(201).json({
-      message: 'Transaction crÃ©Ã©e avec succÃ¨s',
+      message: 'Transaction créée avec succès',
       transaction: nouvelleTransaction
     });
   } catch (erreur) {
@@ -272,7 +272,7 @@ router.post('/', auth, async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID de la transaction Ã  modifier
+ *         description: ID de la transaction à modifier
  *     requestBody:
  *       required: true
  *       content:
@@ -298,14 +298,14 @@ router.post('/', auth, async (req, res, next) => {
  *                 example: 1
  *               description:
  *                 type: string
- *                 example: DÃ©jeuner au restaurant
+ *                 example: Déjeuner au restaurant
  *               date:
  *                 type: string
  *                 format: date
  *                 example: "2024-08-21"
  *     responses:
  *       200:
- *         description: Transaction modifiÃ©e avec succÃ¨s
+ *         description: Transaction modifiée avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -313,17 +313,17 @@ router.post('/', auth, async (req, res, next) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Transaction modifiÃ©e avec succÃ¨s
+ *                   example: Transaction modifiée avec succès
  *                 transaction:
  *                   $ref: '#/components/schemas/Transaction'
  *       400:
- *         description: DonnÃ©es invalides
+ *         description: Données invalides
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: Transaction ou catÃ©gorie non trouvÃ©e
+ *         description: Transaction ou catégorie non trouvée
  *         content:
  *           application/json:
  *             schema:
@@ -338,44 +338,53 @@ router.put('/:id', auth, async (req, res, next) => {
     const transaction = await Transaction.trouverParId(req.params.id, req.utilisateur_id);
     if (!transaction) {
       return res.status(404).json({
-        message: 'Transaction non trouvÃ©e'
+        message: 'Transaction non trouvée'
       });
     }
 
-    // Validation des donnÃ©es
+    // Validation des données
     if (!type || !amount || !categoryId || !date) {
       return res.status(400).json({
-        message: 'Type, montant, catÃ©gorie et date sont requis'
+        message: 'Type, montant, catégorie et date sont requis'
       });
     }
 
     if (!['revenu', 'depense'].includes(type)) {
       return res.status(400).json({
-        message: 'Le type doit Ãªtre "revenu" ou "depense"'
+        message: 'Le type doit être "revenu" ou "depense"'
       });
     }
 
     if (amount <= 0) {
       return res.status(400).json({
-        message: 'Le montant doit Ãªtre positif'
+        message: 'Le montant doit être positif'
       });
     }
 
-    // VÃ©rifier que la catÃ©gorie appartient Ã  l'utilisateur et correspond au type
+    // Vérifier que la catégorie appartient à l'utilisateur et correspond au type
     const categorie = await Categorie.trouverParId(categoryId);
     if (!categorie || categorie.utilisateur_id !== req.utilisateur_id) {
       return res.status(404).json({
-        message: 'CatÃ©gorie non trouvÃ©e'
+        message: 'Catégorie non trouvée'
       });
     }
 
-    // Gestion spéciale pour les catégories hybrides`n    if (categorie.type === 'hybride') {`n      // Les catégories hybrides acceptent les transactions de type 'revenu' ou 'depense'`n      if (!['revenu', 'depense'].includes(type)) {`n        return res.status(400).json({`n          message: 'Le type de la transaction doit être \"revenu\" ou \"depense\"'`n        });`n      }`n    } else // Gestion spéciale pour les catégories hybrides`n    if (categorie.type === 'hybride') {`n      // Les catégories hybrides acceptent les transactions de type 'revenu' ou 'depense'`n      if (!['revenu', 'depense'].includes(type)) {`n        return res.status(400).json({`n          message: 'Le type de la transaction doit être \"revenu\" ou \"depense\"'`n        });`n      }`n    } else if (categorie.type !== type) {
+    // Gestion spéciale pour les catégories hybrides
+    if (categorie.type === 'hybride') {
+      // Les catégories hybrides acceptent les transactions de type 'revenu' ou 'depense'
+      if (!['revenu', 'depense'].includes(type)) {
+        return res.status(400).json({
+          message: 'Le type de la transaction doit être "revenu" ou "depense"'
+        });
+      }
+    } else if (categorie.type !== type) {
+      // Pour les autres catégories, le type doit correspondre exactement
       return res.status(400).json({
-        message: 'Le type de la catÃ©gorie ne correspond pas au type de la transaction'
+        message: 'Le type de la catégorie ne correspond pas au type de la transaction'
       });
     }
 
-    // Mettre Ã  jour la transaction
+    // Mettre à jour la transaction
     await transaction.mettreAJour({
       categorie_id: categoryId,
       type,
@@ -385,7 +394,7 @@ router.put('/:id', auth, async (req, res, next) => {
     });
 
     res.json({
-      message: 'Transaction modifiÃ©e avec succÃ¨s',
+      message: 'Transaction modifiée avec succès',
       transaction
     });
   } catch (erreur) {
@@ -407,10 +416,10 @@ router.put('/:id', auth, async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID de la transaction Ã  supprimer
+ *         description: ID de la transaction à supprimer
  *     responses:
  *       200:
- *         description: Transaction supprimÃ©e avec succÃ¨s
+ *         description: Transaction supprimée avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -418,9 +427,9 @@ router.put('/:id', auth, async (req, res, next) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Transaction supprimÃ©e avec succÃ¨s
+ *                   example: Transaction supprimée avec succès
  *       404:
- *         description: Transaction non trouvÃ©e
+ *         description: Transaction non trouvée
  *         content:
  *           application/json:
  *             schema:
@@ -433,14 +442,14 @@ router.delete('/:id', auth, async (req, res, next) => {
     
     if (!transaction) {
       return res.status(404).json({
-        message: 'Transaction non trouvÃ©e'
+        message: 'Transaction non trouvée'
       });
     }
 
     await transaction.supprimer();
 
     res.json({
-      message: 'Transaction supprimÃ©e avec succÃ¨s'
+      message: 'Transaction supprimée avec succès'
     });
   } catch (erreur) {
     next(erreur);
@@ -485,14 +494,14 @@ router.get('/stats/monthly/:year/:month', async (req, res, next) => {
   }
 });
 
-// Obtenir les dÃ©penses par catÃ©gorie
+// Obtenir les dépenses par catégorie
 router.get('/stats/by-category', async (req, res, next) => {
   try {
     const { startDate, endDate } = req.query;
 
     if (!startDate || !endDate) {
       return res.status(400).json({
-        message: 'Date de dÃ©but et date de fin requises'
+        message: 'Date de début et date de fin requises'
       });
     }
 
@@ -510,7 +519,7 @@ router.get('/stats/by-category', async (req, res, next) => {
   }
 });
 
-// Obtenir l'Ã©volution mensuelle
+// Obtenir l'évolution mensuelle
 router.get('/stats/trend/:year', async (req, res, next) => {
   try {
     const { year } = req.params;
@@ -533,7 +542,7 @@ router.get('/stats/trend/:year', async (req, res, next) => {
  * @swagger
  * /api/transactions/by-category/{categoryId}:
  *   get:
- *     summary: Obtenir les transactions par catÃ©gorie
+ *     summary: Obtenir les transactions par catégorie
  *     tags: [Transactions]
  *     security:
  *       - bearerAuth: []
@@ -543,25 +552,25 @@ router.get('/stats/trend/:year', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: ID de la catÃ©gorie
+ *         description: ID de la catégorie
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
- *         description: NumÃ©ro de page
+ *         description: Numéro de page
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 20
- *         description: Nombre d'Ã©lÃ©ments par page
+ *         description: Nombre d'éléments par page
  *       - in: query
  *         name: startDate
  *         schema:
  *           type: string
  *           format: date
- *         description: Date de dÃ©but (YYYY-MM-DD)
+ *         description: Date de début (YYYY-MM-DD)
  *       - in: query
  *         name: endDate
  *         schema:
@@ -570,7 +579,7 @@ router.get('/stats/trend/:year', async (req, res, next) => {
  *         description: Date de fin (YYYY-MM-DD)
  *     responses:
  *       200:
- *         description: Transactions par catÃ©gorie rÃ©cupÃ©rÃ©es avec succÃ¨s
+ *         description: Transactions par catégorie récupérées avec succès
  *         content:
  *           application/json:
  *             schema:
@@ -588,23 +597,23 @@ router.get('/stats/trend/:year', async (req, res, next) => {
  *                     limit:
  *                       type: integer
  *       404:
- *         description: CatÃ©gorie non trouvÃ©e
+ *         description: Catégorie non trouvée
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-// Obtenir les transactions par catÃ©gorie
+// Obtenir les transactions par catégorie
 router.get('/by-category/:categoryId', auth, async (req, res, next) => {
   try {
     const { categoryId } = req.params;
     const { page = 1, limit = 20, startDate, endDate } = req.query;
 
-    // VÃ©rifier que la catÃ©gorie appartient Ã  l'utilisateur
+    // Vérifier que la catégorie appartient à l'utilisateur
     const categorie = await Categorie.trouverParId(categoryId);
     if (!categorie || categorie.utilisateur_id !== req.utilisateur_id) {
       return res.status(404).json({
-        message: 'CatÃ©gorie non trouvÃ©e'
+        message: 'Catégorie non trouvée'
       });
     }
 
@@ -629,4 +638,3 @@ router.get('/by-category/:categoryId', auth, async (req, res, next) => {
 });
 
 module.exports = router;
-
