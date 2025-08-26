@@ -131,8 +131,8 @@ class EmailService {
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${frontendUrl}/verify-email?token=${token}" 
-                 style="background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%); 
-                        color: white; 
+                 style="background: linear-gradient(135deg,rgb(0, 255, 123) 0%,rgb(0, 234, 255) 100%); 
+                        color: black; 
                         padding: 15px 30px; 
                         text-decoration: none; 
                         border-radius: 25px; 
@@ -269,6 +269,94 @@ class EmailService {
     
     // En production, utiliser l'URL Vercel
     return 'https://moneywise.vercel.app';
+  }
+
+  // Nouvelle méthode pour envoyer les alertes par email
+  async envoyerAlertesFinancieres(email, prenom, alertes) {
+    this.initialiserTransporter();
+    
+    const mailOptions = {
+      from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: '🚨 Alertes Financières - MoneyWise',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">🚨 Alertes MoneyWise</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">Vos finances nécessitent votre attention</p>
+          </div>
+          
+          <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
+            <h2 style="color: #333; margin-bottom: 20px;">Bonjour ${prenom},</h2>
+            
+            <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
+              Nous avons détecté des situations qui nécessitent votre attention dans vos finances :
+            </p>
+            
+            ${alertes.map(alerte => `
+              <div style="background: ${this.getAlerteColor(alerte.type)}; border-left: 4px solid ${this.getAlerteBorderColor(alerte.type)}; padding: 15px; margin: 15px 0; border-radius: 4px;">
+                <p style="margin: 0; color: white; font-weight: bold;">
+                  ${this.getAlerteIcon(alerte.type)} ${alerte.message}
+                </p>
+                <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8); font-size: 12px;">
+                  Sévérité: ${alerte.severite}
+                </p>
+              </div>
+            `).join('')}
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${this.getFrontendUrl()}/dashboard" 
+                 style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                        color: white; 
+                        padding: 15px 30px; 
+                        text-decoration: none; 
+                        border-radius: 25px; 
+                        display: inline-block; 
+                        font-weight: bold;">
+                Voir mon Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      `
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      console.log('📧 Alertes financières envoyées:', info.messageId);
+      return true;
+    } catch (error) {
+      console.error('❌ Erreur envoi alertes:', error);
+      return false;
+    }
+  }
+
+  // Méthodes helpers pour les couleurs d'alertes
+  getAlerteColor(type) {
+    const colors = {
+      'danger': '#ff6b6b',
+      'warning': '#ffa726',
+      'info': '#42a5f5'
+    };
+    return colors[type] || '#42a5f5';
+  }
+
+  getAlerteBorderColor(type) {
+    const colors = {
+      'danger': '#d32f2f',
+      'warning': '#f57c00',
+      'info': '#1976d2'
+    };
+    return colors[type] || '#1976d2';
+  }
+
+  getAlerteIcon(type) {
+    const icons = {
+      'danger': '🚨',
+      'warning': '⚠️',
+      'info': 'ℹ️'
+    };
+    return icons[type] || 'ℹ️';
   }
 }
 

@@ -2,6 +2,8 @@ const express = require('express');
 const Transaction = require('../models/Transaction');
 const Categorie = require('../models/Categorie');
 const { auth } = require('../middleware/auth');
+const emailService = require('../services/emailService');
+const Utilisateur = require('../models/Utilisateur');
 
 const router = express.Router();
 
@@ -427,6 +429,9 @@ router.get('/alerts', async (req, res, next) => {
     const moisCourant = new Date().getMonth() + 1;
     const anneeCourante = new Date().getFullYear();
 
+    // Récupérer les données utilisateur pour l'email
+    const utilisateur = await Utilisateur.trouverParId(req.utilisateur_id);
+
     // Vérifier les dépenses du mois en cours
     const statistiquesMensuelles = await Transaction.obtenirStatistiquesMensuelles(req.utilisateur_id, anneeCourante, moisCourant);
     
@@ -464,6 +469,22 @@ router.get('/alerts', async (req, res, next) => {
           severite: 'low'
         });
       }
+    }
+
+    // Envoyer les alertes par email si il y en a
+    if (alertes.length > 0 && utilisateur) {
+      // Envoyer en arrière-plan (ne pas bloquer la réponse)
+      setImmediate(async () => {
+        try {
+          await emailService.envoyerAlertesFinancieres(
+            utilisateur.email, 
+            utilisateur.prenom, 
+            alertes
+          );
+        } catch (error) {
+          console.error('Erreur envoi email alertes:', error);
+        }
+      });
     }
 
     res.json({ alertes });
