@@ -18,16 +18,87 @@ router.use(auth);
 
 // Fonction utilitaire pour formater les dates en J-M-AAAA
 function formaterDate(dateString) {
-  const date = new Date(dateString);
-  const jour = date.getDate();
-  const mois = date.getMonth() + 1;
-  const annee = date.getFullYear();
-  return `${jour}-${mois}-${annee}`;
+  try {
+    if (!dateString) return 'Date invalide';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Date invalide';
+    
+    const jour = date.getDate().toString().padStart(2, '0');
+    const mois = (date.getMonth() + 1).toString().padStart(2, '0');
+    const annee = date.getFullYear();
+    return `${jour}-${mois}-${annee}`;
+  } catch (error) {
+    console.error('Erreur formatage date:', error);
+    return 'Date invalide';
+  }
 }
 
 // Fonction utilitaire pour formater les montants en FCFA
 function formaterMontant(montant) {
-  return `${parseFloat(montant).toLocaleString('fr-FR')} FCFA`;
+  try {
+    if (montant === null || montant === undefined || isNaN(montant)) {
+      return '0 FCFA';
+    }
+    
+    const montantNum = parseFloat(montant);
+    if (isNaN(montantNum)) return '0 FCFA';
+    
+    return `${montantNum.toLocaleString('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })} FCFA`;
+  } catch (error) {
+    console.error('Erreur formatage montant:', error);
+    return '0 FCFA';
+  }
+}
+
+// Fonction utilitaire pour nettoyer et tronquer le texte
+function nettoyerTexte(texte, longueurMax = 25) {
+  try {
+    if (!texte) return '';
+    
+    // Supprimer les caractères spéciaux problématiques
+    let texteNettoye = String(texte)
+      .replace(/[^\w\s\-.,!?()]/g, '') // Garder seulement les caractères sûrs
+      .replace(/\s+/g, ' ') // Remplacer les espaces multiples
+      .trim();
+    
+    // Tronquer si nécessaire
+    if (texteNettoye.length > longueurMax) {
+      texteNettoye = texteNettoye.substring(0, longueurMax - 3) + '...';
+    }
+    
+    return texteNettoye;
+  } catch (error) {
+    console.error('Erreur nettoyage texte:', error);
+    return '';
+  }
+}
+
+// Fonction utilitaire pour valider les données de transaction
+function validerTransaction(transaction) {
+  try {
+    return {
+      id: transaction.id || 'N/A',
+      date: transaction.date_transaction || new Date().toISOString(),
+      type: transaction.type === 'revenu' ? 'revenu' : 'depense',
+      montant: parseFloat(transaction.montant) || 0,
+      categorie: transaction.nom_categorie || 'Non catégorisé',
+      description: transaction.description || ''
+    };
+  } catch (error) {
+    console.error('Erreur validation transaction:', error);
+    return {
+      id: 'N/A',
+      date: new Date().toISOString(),
+      type: 'depense',
+      montant: 0,
+      categorie: 'Erreur',
+      description: 'Données invalides'
+    };
+  }
 }
 
 /**
@@ -106,17 +177,26 @@ router.get('/transactions/csv', async (req, res, next) => {
       endDate
     });
 
-    // Créer le contenu CSV
+    // Créer le contenu CSV avec validation des données
     const enTeteCSV = 'Date,Type,Montant,Catégorie,Description\n';
     const lignesCSV = transactions.map(transaction => {
-      const typeTransaction = transaction.type === 'revenu' ? 'Revenu' : 'Dépense';
-      const montant = transaction.type === 'revenu' ? 
-        `${formaterMontant(transaction.montant)}` : 
-        `-${formaterMontant(transaction.montant)}`;
-      const categorie = transaction.nom_categorie || 'Non catégorisé';
-      const description = transaction.description || '';
-      
-      return `${formaterDate(transaction.date_transaction)},${typeTransaction},${montant},${categorie},"${description}"`;
+      try {
+        const transactionValidee = validerTransaction(transaction);
+        const typeTransaction = transactionValidee.type === 'revenu' ? 'Revenu' : 'Dépense';
+        const montant = transactionValidee.type === 'revenu' ? 
+          `${formaterMontant(transactionValidee.montant)}` : 
+          `-${formaterMontant(transactionValidee.montant)}`;
+        const categorie = nettoyerTexte(transactionValidee.categorie, 30);
+        const description = nettoyerTexte(transactionValidee.description, 50);
+        
+        // Échapper les guillemets dans la description pour CSV
+        const descriptionEchappee = description.replace(/"/g, '""');
+        
+        return `${formaterDate(transactionValidee.date)},${typeTransaction},${montant},"${categorie}","${descriptionEchappee}"`;
+      } catch (error) {
+        console.error('Erreur traitement transaction CSV:', error);
+        return `${formaterDate(new Date())},Erreur,0 FCFA,"Erreur","Données invalides"`;
+      }
     }).join('\n');
 
     const contenuCSV = enTeteCSV + lignesCSV;
@@ -210,8 +290,16 @@ router.get('/transactions/pdf', async (req, res, next) => {
       endDate
     });
 
-    // Créer le PDF
-    const doc = new jsPDF.default();
+    // Créer le PDF avec gestion d'erreurs
+    let doc;
+    try {
+      doc = new jsPDF.default();
+    } catch (error) {
+      console.error('Erreur création PDF:', error);
+      return res.status(500).json({
+        message: 'Erreur lors de la création du PDF'
+      });
+    }
     
     // Couleurs pour le design
     const colors = {
@@ -226,23 +314,39 @@ router.get('/transactions/pdf', async (req, res, next) => {
     
     // Fonction pour dessiner un rectangle avec coins arrondis
     function drawRoundedRect(x, y, width, height, radius, color) {
-      doc.setFillColor(...color);
-      doc.roundedRect(x, y, width, height, radius, radius, 'F');
+      try {
+        if (!Array.isArray(color) || color.length !== 3) {
+          color = [0, 0, 0]; // Couleur par défaut si invalide
+        }
+        doc.setFillColor(...color);
+        doc.roundedRect(x, y, width, height, radius, radius, 'F');
+      } catch (error) {
+        console.error('Erreur dessin rectangle:', error);
+      }
     }
     
     // Fonction pour dessiner une ligne décorative
     function drawDecorativeLine(x, y, width, color) {
-      doc.setDrawColor(...color);
-      doc.setLineWidth(2);
-      doc.line(x, y, x + width, y);
+      try {
+        if (!Array.isArray(color) || color.length !== 3) {
+          color = [0, 0, 0]; // Couleur par défaut si invalide
+        }
+        doc.setDrawColor(...color);
+        doc.setLineWidth(2);
+        doc.line(x, y, x + width, y);
+      } catch (error) {
+        console.error('Erreur dessin ligne:', error);
+      }
     }
     
     // En-tête avec logo et titre
     try {
       const logoUrl = 'https://res.cloudinary.com/dljxkppye/image/upload/v1756213896/logo_aq4isa.jpg';
       doc.addImage(logoUrl, 'JPEG', 20, 15, 45, 25);
+      console.log('✅ Logo ajouté avec succès');
     } catch (error) {
-      console.log('Erreur lors du chargement du logo:', error.message);
+      console.log('⚠️ Erreur lors du chargement du logo:', error.message);
+      // Continuer sans logo
     }
     
     // Titre principal avec style
@@ -277,68 +381,103 @@ router.get('/transactions/pdf', async (req, res, next) => {
     doc.text('Catégorie', 130, tableY + 2);
     doc.text('Description', 170, tableY + 2);
     
-    // Lignes du tableau avec alternance de couleurs
+    // Lignes du tableau avec alternance de couleurs et validation
     let yPosition = tableY + 15;
     transactions.forEach((transaction, index) => {
-      if (yPosition > 250) {
-        doc.addPage();
-        yPosition = 20;
+      try {
+        // Validation de la transaction
+        const transactionValidee = validerTransaction(transaction);
         
-        // Redessiner l'en-tête du tableau sur la nouvelle page
-        drawRoundedRect(20, yPosition - 5, 170, 15, 3, colors.primary);
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Date', 30, yPosition + 2);
-        doc.text('Type', 60, yPosition + 2);
-        doc.text('Montant', 90, yPosition + 2);
-        doc.text('Catégorie', 130, yPosition + 2);
-        doc.text('Description', 170, yPosition + 2);
-        yPosition += 15;
+        if (yPosition > 250) {
+          doc.addPage();
+          yPosition = 20;
+          
+          // Redessiner l'en-tête du tableau sur la nouvelle page
+          drawRoundedRect(20, yPosition - 5, 170, 15, 3, colors.primary);
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(11);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Date', 30, yPosition + 2);
+          doc.text('Type', 60, yPosition + 2);
+          doc.text('Montant', 90, yPosition + 2);
+          doc.text('Catégorie', 130, yPosition + 2);
+          doc.text('Description', 170, yPosition + 2);
+          yPosition += 15;
+        }
+        
+        // Fond alterné pour les lignes
+        const bgColor = index % 2 === 0 ? [248, 249, 250] : [255, 255, 255];
+        drawRoundedRect(20, yPosition - 3, 170, 12, 2, bgColor);
+        
+        const typeTransaction = transactionValidee.type === 'revenu' ? 'Revenu' : 'Dépense';
+        const montant = transactionValidee.type === 'revenu' ? 
+          `+${formaterMontant(transactionValidee.montant)}` : 
+          `-${formaterMontant(transactionValidee.montant)}`;
+        const categorie = nettoyerTexte(transactionValidee.categorie, 15);
+        const description = nettoyerTexte(transactionValidee.description, 20);
+        
+        // Couleurs pour le type et le montant
+        const typeColor = transactionValidee.type === 'revenu' ? colors.success : colors.danger;
+        const montantColor = transactionValidee.type === 'revenu' ? colors.success : colors.danger;
+        
+        // Ajout sécurisé du texte avec gestion d'erreurs
+        try {
+          doc.setTextColor(...colors.dark);
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'normal');
+          doc.text(formaterDate(transactionValidee.date), 30, yPosition + 2);
+          
+          doc.setTextColor(...typeColor);
+          doc.setFont('helvetica', 'bold');
+          doc.text(typeTransaction, 60, yPosition + 2);
+          
+          doc.setTextColor(...montantColor);
+          doc.text(montant, 90, yPosition + 2);
+          
+          doc.setTextColor(...colors.dark);
+          doc.setFont('helvetica', 'normal');
+          doc.text(categorie, 130, yPosition + 2);
+          doc.text(description, 170, yPosition + 2);
+        } catch (textError) {
+          console.error('Erreur ajout texte PDF:', textError);
+          // Ajouter un texte d'erreur par défaut
+          doc.setTextColor(...colors.danger);
+          doc.setFontSize(8);
+          doc.text('Erreur affichage', 30, yPosition + 2);
+        }
+        
+        yPosition += 12;
+      } catch (error) {
+        console.error('Erreur traitement transaction PDF:', error);
+        // Continuer avec la transaction suivante
+        yPosition += 12;
       }
-      
-      // Fond alterné pour les lignes
-      const bgColor = index % 2 === 0 ? [248, 249, 250] : [255, 255, 255];
-      drawRoundedRect(20, yPosition - 3, 170, 12, 2, bgColor);
-      
-      const typeTransaction = transaction.type === 'revenu' ? 'Revenu' : 'Dépense';
-      const montant = transaction.type === 'revenu' ? 
-        `+${formaterMontant(transaction.montant)}` : 
-        `-${formaterMontant(transaction.montant)}`;
-      const categorie = transaction.nom_categorie || 'Non catégorisé';
-      const description = transaction.description || '';
-      
-      // Couleurs pour le type et le montant
-      const typeColor = transaction.type === 'revenu' ? colors.success : colors.danger;
-      const montantColor = transaction.type === 'revenu' ? colors.success : colors.danger;
-      
-      doc.setTextColor(...colors.dark);
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text(formaterDate(transaction.date_transaction), 30, yPosition + 2);
-      
-      doc.setTextColor(...typeColor);
-      doc.setFont('helvetica', 'bold');
-      doc.text(String(typeTransaction), 60, yPosition + 2);
-      
-      doc.setTextColor(...montantColor);
-      doc.text(String(montant), 90, yPosition + 2);
-      
-      doc.setTextColor(...colors.dark);
-      doc.setFont('helvetica', 'normal');
-      doc.text(String(categorie), 130, yPosition + 2);
-      doc.text(String(description).substring(0, 25), 170, yPosition + 2);
-      
-      yPosition += 12;
     });
     
-    // Calculer les totaux
-    const totalRevenus = transactions
-      .filter(t => t.type === 'revenu')
-      .reduce((sum, t) => sum + parseFloat(t.montant), 0);
-    const totalDepenses = transactions
-      .filter(t => t.type === 'depense')
-      .reduce((sum, t) => sum + parseFloat(t.montant), 0);
+    // Calculer les totaux avec validation
+    let totalRevenus = 0;
+    let totalDepenses = 0;
+    
+    try {
+      totalRevenus = transactions
+        .filter(t => t && t.type === 'revenu')
+        .reduce((sum, t) => {
+          const montant = parseFloat(t.montant) || 0;
+          return sum + (isNaN(montant) ? 0 : montant);
+        }, 0);
+      
+      totalDepenses = transactions
+        .filter(t => t && t.type === 'depense')
+        .reduce((sum, t) => {
+          const montant = parseFloat(t.montant) || 0;
+          return sum + (isNaN(montant) ? 0 : montant);
+        }, 0);
+    } catch (error) {
+      console.error('Erreur calcul totaux:', error);
+      totalRevenus = 0;
+      totalDepenses = 0;
+    }
+    
     const solde = totalRevenus - totalDepenses;
     
     // Page de résumé avec design amélioré
@@ -427,10 +566,21 @@ router.get('/transactions/pdf', async (req, res, next) => {
     // Définir les headers pour le téléchargement
     const nomFichier = `transactions_${startDate}_${endDate}.pdf`;
     
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
-    
-    res.send(Buffer.from(doc.output('arraybuffer')));
+    try {
+      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
+      res.setHeader('Content-Length', pdfBuffer.length);
+      
+      console.log(`✅ PDF généré avec succès: ${nomFichier} (${pdfBuffer.length} bytes)`);
+      res.send(pdfBuffer);
+    } catch (error) {
+      console.error('Erreur génération PDF final:', error);
+      return res.status(500).json({
+        message: 'Erreur lors de la génération du PDF'
+      });
+    }
   } catch (erreur) {
     next(erreur);
   }
