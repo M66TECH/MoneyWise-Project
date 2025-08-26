@@ -107,24 +107,40 @@ class Transaction {
         return resultat.rows[0].obtenir_statistiques_mensuelles;
     }
 
-    static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin, type = 'depense') {
+    static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin) {
         const resultat = await query(`
             SELECT 
-                c.id as categorie_id,
                 c.nom as nom_categorie,
-                c.couleur as couleur_categorie,
-                COUNT(t.id) as nombre_transactions,
-                SUM(t.montant) as montant_total
-            FROM categories c
-            LEFT JOIN transactions t ON c.id = t.categorie_id 
-                AND t.utilisateur_id = $1 
-                AND t.type = $4
-                AND t.date_transaction >= $2 
+                SUM(t.montant) as montant_total,
+                COUNT(*) as nombre_transactions
+            FROM transactions t
+            JOIN categories c ON t.categorie_id = c.id
+            WHERE t.utilisateur_id = $1 
+                AND t.type = 'depense'
+                AND t.date_transaction >= $2
                 AND t.date_transaction <= $3
-            WHERE c.utilisateur_id = $1 AND c.type = $4
-            GROUP BY c.id, c.nom, c.couleur
-            ORDER BY montant_total DESC NULLS LAST
-        `, [utilisateur_id, dateDebut, dateFin, type]);
+            GROUP BY c.id, c.nom
+            ORDER BY montant_total DESC
+        `, [utilisateur_id, dateDebut, dateFin]);
+        
+        return resultat.rows;
+    }
+
+    static async obtenirRevenusParCategorie(utilisateur_id, dateDebut, dateFin) {
+        const resultat = await query(`
+            SELECT 
+                c.nom as nom_categorie,
+                SUM(t.montant) as montant_total,
+                COUNT(*) as nombre_transactions
+            FROM transactions t
+            JOIN categories c ON t.categorie_id = c.id
+            WHERE t.utilisateur_id = $1 
+                AND t.type = 'revenu'
+                AND t.date_transaction >= $2
+                AND t.date_transaction <= $3
+            GROUP BY c.id, c.nom
+            ORDER BY montant_total DESC
+        `, [utilisateur_id, dateDebut, dateFin]);
         
         return resultat.rows;
     }

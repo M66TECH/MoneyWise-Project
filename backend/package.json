@@ -31,7 +31,10 @@
     "db:remove-theme": "node supprimer-colonne-theme.js",
     "db:migrate-hybride": "node migrer-type-hybride.js",
     "test:hybride": "node test-type-hybride.js",
-    "test:export-pdf-complet": "node test-export-pdf-complet.js"
+    "test:export-pdf-complet": "node test-export-pdf-complet.js",
+    "test:rapport-mensuel-pdf": "node test-rapport-mensuel-pdf.js",
+    "test:rapport-transactions-corrige": "node test-rapport-transactions-corrige.js",
+    "test:frontend-export-complet": "node test-frontend-export-complet.js"
   },
   "keywords": [
     "finance",
