@@ -10,7 +10,9 @@ const categoryRoutes = require('./routes/categories');
 const dashboardRoutes = require('./routes/dashboard');
 const exportRoutes = require('./routes/export');
 const profilRoutes = require('./routes/profil');
+const notificationRoutes = require('./routes/notifications');
 const { errorHandler } = require('./middleware/errorHandler');
+const notificationService = require('./services/notificationService');
 
 const { initialiserBaseDeDonneesRender } = require('../init-db-render');
 
@@ -72,6 +74,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/export', exportRoutes);
 app.use('/api/profil', profilRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Servir les fichiers statiques des photos de profil (développement local)
 app.use('/api/profil/photo', express.static(path.join(__dirname, '../uploads/profiles')));
@@ -139,6 +142,9 @@ async function demarrerServeur() {
     app.listen(PORT, () => {
       console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
       console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
+      
+      // Démarrer le service de notifications
+      notificationService.start();
     });
   } catch (erreur) {
     console.error('❌ Erreur lors de l\'initialisation de la base de données:', erreur.message);

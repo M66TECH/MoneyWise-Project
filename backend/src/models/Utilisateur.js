@@ -37,6 +37,11 @@ class Utilisateur {
         return resultat.rows[0] ? new Utilisateur(resultat.rows[0]) : null;
     }
 
+    static async trouverTous() {
+        const resultat = await query('SELECT * FROM utilisateurs WHERE email_verifie = TRUE ORDER BY date_creation DESC');
+        return resultat.rows.map(row => new Utilisateur(row));
+    }
+
     async mettreAJourProfil(donneesProfil) {
         const { prenom, nom } = donneesProfil;
         const resultat = await query(
