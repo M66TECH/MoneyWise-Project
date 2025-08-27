@@ -39,7 +39,8 @@
     "correction:export-system": "node correction-export-system.js",
     "test:alertes-email": "node test-alertes-email.js",
     "test:nouveau-seuil-alerte": "node test-nouveau-seuil-alerte.js",
-    "test:seuil-alerte-direct": "node test-seuil-alerte-direct.js"
+    "test:seuil-alerte-direct": "node test-seuil-alerte-direct.js",
+    "test:alertes-personnalisees": "node test-alertes-personnalisees.js"
   },
   "keywords": [
     "finance",
