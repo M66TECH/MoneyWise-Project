@@ -38,6 +38,32 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * @swagger
+ * /api/notifications/check:
+ *   post:
+ *     summary: Déclencher une vérification manuelle des alertes
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Vérification des alertes déclenchée
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Vérification des alertes déclenchée"
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Déclencher une vérification manuelle des alertes
 router.post('/check', auth, async (req, res, next) => {
   try {
@@ -287,6 +313,46 @@ router.post('/send-email', auth, async (req, res, next) => {
  *                       type: string
  *       400:
  *         description: Paramètres invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Utilisateur non trouvé
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+/**
+ * @swagger
+ * /api/notifications/send-custom-alert:
+ *   post:
+ *     summary: Envoyer une alerte personnalisée depuis le frontend
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/AlertRequest'
+ *     responses:
+ *       200:
+ *         description: Alerte envoyée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AlertResponse'
+ *       400:
+ *         description: Données invalides
  *         content:
  *           application/json:
  *             schema:

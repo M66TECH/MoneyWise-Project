@@ -311,7 +311,8 @@ router.post('/register', uploadPhotoProfil, async (req, res, next) => {
  *             properties:
  *               token:
  *                 type: string
- *                 example: abc123def456...
+ *                 description: Token de vérification reçu par email
+ *                 example: "abc123def456"
  *     responses:
  *       200:
  *         description: Email vérifié avec succès
@@ -322,20 +323,17 @@ router.post('/register', uploadPhotoProfil, async (req, res, next) => {
  *               properties:
  *                 message:
  *                   type: string
- *                   example: Email vérifié avec succès
+ *                   example: "Email vérifié avec succès"
  *                 utilisateur:
  *                   $ref: '#/components/schemas/Utilisateur'
- *                 token:
- *                   type: string
- *                   example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
  *       400:
- *         description: Token invalide ou manquant
+ *         description: Token invalide ou expiré
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *       404:
- *         description: Token non trouvé ou expiré
+ *         description: Token non trouvé
  *         content:
  *           application/json:
  *             schema:
@@ -429,6 +427,56 @@ router.post('/verify-email', async (req, res, next) => {
  *               $ref: '#/components/schemas/Error'
  *       404:
  *         description: Utilisateur non trouvé ou déjà vérifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+/**
+ * @swagger
+ * /api/auth/resend-verification:
+ *   post:
+ *     summary: Renvoyer l'email de vérification
+ *     tags: [Authentification]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 description: Email de l'utilisateur non vérifié
+ *                 example: "user@example.com"
+ *     responses:
+ *       200:
+ *         description: Email de vérification renvoyé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Email de vérification renvoyé avec succès"
+ *       400:
+ *         description: Email requis
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Utilisateur non trouvé ou email déjà vérifié
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Erreur lors de l'envoi de l'email
  *         content:
  *           application/json:
  *             schema:

@@ -72,6 +72,64 @@ router.use(auth);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * @swagger
+ * /api/export/transactions/csv:
+ *   get:
+ *     summary: Exporter les transactions en CSV
+ *     tags: [Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *         example: "2024-08-01"
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *         example: "2024-08-31"
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [revenu, depense]
+ *         description: Filtrer par type de transaction
+ *         example: "depense"
+ *     responses:
+ *       200:
+ *         description: Fichier CSV généré avec succès
+ *         content:
+ *           text/csv:
+ *             schema:
+ *               type: string
+ *         headers:
+ *           Content-Disposition:
+ *             description: Nom du fichier de téléchargement
+ *             schema:
+ *               type: string
+ *               example: "attachment; filename=\"transactions_2024-08-01_2024-08-31.csv\""
+ *       400:
+ *         description: Dates manquantes ou invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Exporter les transactions en CSV
 router.get('/transactions/csv', async (req, res, next) => {
   try {
@@ -99,7 +157,8 @@ router.get('/transactions/csv', async (req, res, next) => {
     const enTeteCSV = 'Date,Type,Montant,Catégorie,Description\n';
     const lignesCSV = transactions.map(transaction => {
       const typeTransaction = transaction.type === 'revenu' ? 'Revenu' : 'Dépense';
-      const montant = transaction.type === 'revenu' ? transaction.montant : `-${transaction.montant}`;
+      const montantFormate = formaterMontant(transaction.montant);
+      const montant = transaction.type === 'revenu' ? montantFormate : `-${montantFormate}`;
       const categorie = transaction.nom_categorie || 'Non catégorisé';
       const description = transaction.description || '';
       
@@ -470,6 +529,112 @@ router.get('/transactions/pdf', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/export/transactions/json:
+ *   get:
+ *     summary: Exporter les transactions en JSON
+ *     tags: [Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *         example: "2024-08-01"
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *         example: "2024-08-31"
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *           enum: [revenu, depense]
+ *         description: Filtrer par type de transaction
+ *         example: "depense"
+ *     responses:
+ *       200:
+ *         description: Fichier JSON généré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 dateExport:
+ *                   type: string
+ *                   format: date-time
+ *                   example: "2024-08-27T10:30:00.000Z"
+ *                 periode:
+ *                   type: object
+ *                   properties:
+ *                     startDate:
+ *                       type: string
+ *                       format: date
+ *                       example: "2024-08-01"
+ *                     endDate:
+ *                       type: string
+ *                       format: date
+ *                       example: "2024-08-31"
+ *                 nombreTotalTransactions:
+ *                   type: integer
+ *                   example: 25
+ *                 transactions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       date:
+ *                         type: string
+ *                         format: date
+ *                         example: "2024-08-15"
+ *                       type:
+ *                         type: string
+ *                         enum: [revenu, depense]
+ *                         example: "depense"
+ *                       montant:
+ *                         type: string
+ *                         example: "15.000 FCFA"
+ *                       categorie:
+ *                         type: string
+ *                         example: "Restaurant"
+ *                       description:
+ *                         type: string
+ *                         example: "Déjeuner"
+ *                       dateCreation:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2024-08-15T10:30:00.000Z"
+ *         headers:
+ *           Content-Disposition:
+ *             description: Nom du fichier de téléchargement
+ *             schema:
+ *               type: string
+ *               example: "attachment; filename=\"transactions_2024-08-01_2024-08-31.json\""
+ *       400:
+ *         description: Dates manquantes ou invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Exporter les transactions en JSON
 router.get('/transactions/json', async (req, res, next) => {
   try {
@@ -498,7 +663,7 @@ router.get('/transactions/json', async (req, res, next) => {
         id: transaction.id,
         date: transaction.date_transaction,
         type: transaction.type,
-        montant: transaction.montant,
+        montant: formaterMontant(transaction.montant),
         categorie: transaction.nom_categorie,
         description: transaction.description,
         dateCreation: transaction.date_creation
@@ -516,6 +681,62 @@ router.get('/transactions/json', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/export/report/monthly/{year}/{month}/pdf:
+ *   get:
+ *     summary: Générer le rapport mensuel en PDF
+ *     tags: [Export]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Année (ex: 2024)
+ *         example: 2024
+ *       - in: path
+ *         name: month
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Mois (1-12)
+ *         example: 8
+ *     responses:
+ *       200:
+ *         description: Rapport mensuel PDF généré avec succès
+ *         content:
+ *           application/pdf:
+ *             schema:
+ *               type: string
+ *               format: binary
+ *         headers:
+ *           Content-Disposition:
+ *             description: Nom du fichier de téléchargement
+ *             schema:
+ *               type: string
+ *               example: "attachment; filename=\"rapport_mensuel_2024_8.pdf\""
+ *       400:
+ *         description: Paramètres invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       500:
+ *         description: Erreur lors de la génération du PDF
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Générer un rapport mensuel PDF professionnel
 router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
   try {
@@ -782,43 +1003,7 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
       addText('Aucune dépense enregistrée pour cette période', 30, 60, 10, 'normal', colors.dark);
     }
     
-    // 5.5. 💰 DÉTAIL DES REVENUS (Nouvelle page)
-    doc.addPage();
-    
-    addText('DÉTAIL DES REVENUS', 20, 25, 16, 'bold', colors.primary);
-    drawDecorativeLine(20, 30, 170, colors.primary);
-    
-    if (revenusParCategorie && revenusParCategorie.length > 0) {
-      // En-tête du tableau
-      const revenusTableY = 45;
-      drawRoundedRect(20, revenusTableY - 5, 170, 15, 3, colors.success);
-      
-      addText('Catégorie', 30, revenusTableY + 2, 10, 'bold', colors.white);
-      addText('Montant', 100, revenusTableY + 2, 10, 'bold', colors.white);
-      addText('Pourcentage', 140, revenusTableY + 2, 10, 'bold', colors.white);
-      
-      // Lignes du tableau
-      let yPos = revenusTableY + 15;
-      revenusParCategorie.forEach((revenu, index) => {
-        if (yPos > 250) {
-          doc.addPage();
-          yPos = 20;
-        }
-        
-        const bgColor = index % 2 === 0 ? [248, 249, 250] : [255, 255, 255];
-        drawRoundedRect(20, yPos - 3, 170, 12, 2, bgColor);
-        
-        addText(nettoyerTexte(revenu.nom_categorie, 20), 30, yPos + 2, 9, 'normal', colors.dark);
-        addText(formaterMontant(revenu.montant_total), 100, yPos + 2, 9, 'bold', colors.success);
-        const pourcentage = statistiquesMensuelles.total_revenus > 0 ? 
-          ((parseFloat(revenu.montant_total) / statistiquesMensuelles.total_revenus) * 100).toFixed(1) : 0;
-        addText(pourcentage + '%', 140, yPos + 2, 9, 'normal', colors.dark);
-        
-        yPos += 12;
-      });
-    } else {
-      addText('Aucun revenu enregistré pour cette période', 30, 60, 10, 'normal', colors.dark);
-    }
+
     
     // 6. 📈 ANALYSE DES ÉCARTS (Nouvelle page)
     doc.addPage();
@@ -1302,8 +1487,13 @@ function formaterMontant(montant) {
     // Nettoyer le montant si c'est une chaîne avec des caractères spéciaux
     let montantNettoye = montant;
     if (typeof montant === 'string') {
-      // Supprimer les espaces, les /, et autres caractères non numériques sauf le point et la virgule
-      montantNettoye = montant.replace(/[^\d.,]/g, '');
+      // Gérer le cas spécial "/000 FCFA"
+      if (montant.includes('/000')) {
+        montantNettoye = montant.replace('/000', '').replace(/[^\d.,]/g, '');
+      } else {
+        // Supprimer les espaces, les /, et autres caractères non numériques sauf le point et la virgule
+        montantNettoye = montant.replace(/[^\d.,]/g, '');
+      }
       // Remplacer la virgule par un point pour la conversion
       montantNettoye = montantNettoye.replace(',', '.');
     }
@@ -1313,8 +1503,11 @@ function formaterMontant(montant) {
       return '0 FCFA';
     }
     
-    // Formater avec séparateurs de milliers
-    const montantFormate = Math.abs(montantNum).toLocaleString('fr-FR', {
+    // Formater avec séparateurs de milliers (format professionnel avec points)
+    const montantNumAbs = Math.abs(montantNum);
+    
+    // Utiliser toLocaleString avec des points comme séparateurs de milliers
+    const montantFormate = montantNumAbs.toLocaleString('de-DE', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     });
