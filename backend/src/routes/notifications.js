@@ -101,6 +101,8 @@ router.post('/check', auth, async (req, res, next) => {
 // Vérifier les alertes pour l'utilisateur connecté
 router.post('/check-user', auth, async (req, res, next) => {
   try {
+    const { envoyerEmail = false } = req.body;
+    
     // Récupérer l'utilisateur connecté
     const utilisateur = await Utilisateur.trouverParId(req.utilisateur_id);
     
@@ -108,16 +110,103 @@ router.post('/check-user', auth, async (req, res, next) => {
       return res.status(404).json({ message: 'Utilisateur non trouvé' });
     }
 
-    // Vérifier les alertes pour cet utilisateur
-    const resultat = await notificationService.verifierAlertesUtilisateur(utilisateur);
+    // Vérifier les alertes pour cet utilisateur avec option d'envoi d'email
+    const resultat = await notificationService.verifierAlertesUtilisateur(utilisateur, envoyerEmail);
     
     res.json({
       alertes: resultat.alertes || [],
       emailSent: resultat.emailSent || false,
-      message: 'Vérification des alertes terminée'
+      message: envoyerEmail ? 'Vérification des alertes terminée et email envoyé' : 'Vérification des alertes terminée'
     });
   } catch (erreur) {
     next(erreur);
+  }
+});
+
+/**
+ * @swagger
+ * /api/notifications/send-email:
+ *   post:
+ *     summary: Déclencher l'envoi d'email d'alertes pour l'utilisateur connecté
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               forceSend:
+ *                 type: boolean
+ *                 description: Forcer l'envoi même s'il n'y a pas d'alertes
+ *                 default: false
+ *     responses:
+ *       200:
+ *         description: Email envoyé avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 alertes:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 emailSent:
+ *                   type: boolean
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+// Déclencher l'envoi d'email d'alertes
+router.post('/send-email', auth, async (req, res, next) => {
+  try {
+    const { forceSend = false } = req.body;
+    
+    // Récupérer l'utilisateur connecté
+    const utilisateur = await Utilisateur.trouverParId(req.utilisateur_id);
+    
+    if (!utilisateur) {
+      return res.status(404).json({ 
+        success: false,
+        message: 'Utilisateur non trouvé' 
+      });
+    }
+
+    // Vérifier les alertes et envoyer l'email
+    const resultat = await notificationService.verifierAlertesUtilisateur(utilisateur, true);
+    
+    if (resultat.alertes.length === 0 && !forceSend) {
+      return res.json({
+        success: true,
+        message: 'Aucune alerte détectée, email non envoyé',
+        alertes: [],
+        emailSent: false
+      });
+    }
+
+    res.json({
+      success: true,
+      message: resultat.emailSent ? 'Email d\'alertes envoyé avec succès' : 'Erreur lors de l\'envoi de l\'email',
+      alertes: resultat.alertes,
+      emailSent: resultat.emailSent
+    });
+  } catch (erreur) {
+    console.error('Erreur envoi email alertes:', erreur);
+    res.status(500).json({
+      success: false,
+      message: 'Erreur lors de l\'envoi de l\'email d\'alertes',
+      error: erreur.message
+    });
   }
 });
 

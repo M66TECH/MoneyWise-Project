@@ -99,67 +99,96 @@ class Transaction {
     }
 
     static async obtenirStatistiquesMensuelles(utilisateur_id, annee, mois) {
-        const resultat = await query(
-            'SELECT obtenir_statistiques_mensuelles($1, $2, $3)',
-            [utilisateur_id, annee, mois]
-        );
-        
-        return resultat.rows[0].obtenir_statistiques_mensuelles;
+        try {
+            const resultat = await query(
+                'SELECT obtenir_statistiques_mensuelles($1, $2, $3)',
+                [utilisateur_id, annee, mois]
+            );
+            
+            if (!resultat.rows[0] || !resultat.rows[0].obtenir_statistiques_mensuelles) {
+                return {
+                    total_revenus: 0,
+                    total_depenses: 0,
+                    solde: 0,
+                    nombre_transactions: 0
+                };
+            }
+            
+            return resultat.rows[0].obtenir_statistiques_mensuelles;
+        } catch (error) {
+            console.error('Erreur obtenirStatistiquesMensuelles:', error);
+            throw new Error('Erreur lors de la récupération des statistiques mensuelles');
+        }
     }
 
     static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin) {
-        const resultat = await query(`
-            SELECT 
-                c.nom as nom_categorie,
-                SUM(t.montant) as montant_total,
-                COUNT(*) as nombre_transactions
-            FROM transactions t
-            JOIN categories c ON t.categorie_id = c.id
-            WHERE t.utilisateur_id = $1 
-                AND t.type = 'depense'
-                AND t.date_transaction >= $2
-                AND t.date_transaction <= $3
-            GROUP BY c.id, c.nom
-            ORDER BY montant_total DESC
-        `, [utilisateur_id, dateDebut, dateFin]);
-        
-        return resultat.rows;
+        try {
+            const resultat = await query(`
+                SELECT 
+                    c.nom as nom_categorie,
+                    SUM(t.montant) as montant_total,
+                    COUNT(*) as nombre_transactions
+                FROM transactions t
+                JOIN categories c ON t.categorie_id = c.id
+                WHERE t.utilisateur_id = $1 
+                    AND t.type = 'depense'
+                    AND t.date_transaction >= $2
+                    AND t.date_transaction <= $3
+                GROUP BY c.id, c.nom
+                ORDER BY montant_total DESC
+            `, [utilisateur_id, dateDebut, dateFin]);
+            
+            return resultat.rows || [];
+        } catch (error) {
+            console.error('Erreur obtenirDepensesParCategorie:', error);
+            throw new Error('Erreur lors de la récupération des dépenses par catégorie');
+        }
     }
 
     static async obtenirRevenusParCategorie(utilisateur_id, dateDebut, dateFin) {
-        const resultat = await query(`
-            SELECT 
-                c.nom as nom_categorie,
-                SUM(t.montant) as montant_total,
-                COUNT(*) as nombre_transactions
-            FROM transactions t
-            JOIN categories c ON t.categorie_id = c.id
-            WHERE t.utilisateur_id = $1 
-                AND t.type = 'revenu'
-                AND t.date_transaction >= $2
-                AND t.date_transaction <= $3
-            GROUP BY c.id, c.nom
-            ORDER BY montant_total DESC
-        `, [utilisateur_id, dateDebut, dateFin]);
-        
-        return resultat.rows;
+        try {
+            const resultat = await query(`
+                SELECT 
+                    c.nom as nom_categorie,
+                    SUM(t.montant) as montant_total,
+                    COUNT(*) as nombre_transactions
+                FROM transactions t
+                JOIN categories c ON t.categorie_id = c.id
+                WHERE t.utilisateur_id = $1 
+                    AND t.type = 'revenu'
+                    AND t.date_transaction >= $2
+                    AND t.date_transaction <= $3
+                GROUP BY c.id, c.nom
+                ORDER BY montant_total DESC
+            `, [utilisateur_id, dateDebut, dateFin]);
+            
+            return resultat.rows || [];
+        } catch (error) {
+            console.error('Erreur obtenirRevenusParCategorie:', error);
+            throw new Error('Erreur lors de la récupération des revenus par catégorie');
+        }
     }
 
     static async obtenirEvolutionMensuelle(utilisateur_id, annee) {
-        const resultat = await query(`
-            SELECT 
-                EXTRACT(MONTH FROM date_transaction) as mois,
-                type,
-                SUM(montant) as montant_total,
-                COUNT(*) as nombre_transactions
-            FROM transactions
-            WHERE utilisateur_id = $1 
-                AND EXTRACT(YEAR FROM date_transaction) = $2
-            GROUP BY EXTRACT(MONTH FROM date_transaction), type
-            ORDER BY mois, type
-        `, [utilisateur_id, annee]);
-        
-        return resultat.rows;
+        try {
+            const resultat = await query(`
+                SELECT 
+                    EXTRACT(MONTH FROM date_transaction) as mois,
+                    type,
+                    SUM(montant) as montant_total,
+                    COUNT(*) as nombre_transactions
+                FROM transactions
+                WHERE utilisateur_id = $1 
+                    AND EXTRACT(YEAR FROM date_transaction) = $2
+                GROUP BY EXTRACT(MONTH FROM date_transaction), type
+                ORDER BY mois, type
+            `, [utilisateur_id, annee]);
+            
+            return resultat.rows || [];
+        } catch (error) {
+            console.error('Erreur obtenirEvolutionMensuelle:', error);
+            throw new Error('Erreur lors de la récupération de l\'évolution mensuelle');
+        }
     }
 
     static async obtenirResume(utilisateur_id) {
