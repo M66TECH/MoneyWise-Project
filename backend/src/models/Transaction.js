@@ -150,11 +150,11 @@ class Transaction {
     static async obtenirStatistiquesMensuelles(utilisateur_id, annee, mois) {
         try {
             const resultat = await query(
-                'SELECT obtenir_statistiques_mensuelles($1, $2, $3)',
+                'SELECT total_revenus, total_depenses, solde, nombre_transactions FROM obtenir_statistiques_mensuelles($1, $2, $3)',
                 [utilisateur_id, annee, mois]
             );
             
-            if (!resultat.rows[0] || !resultat.rows[0].obtenir_statistiques_mensuelles) {
+            if (resultat.rows.length === 0) {
                 return {
                     total_revenus: 0,
                     total_depenses: 0,
@@ -163,10 +163,15 @@ class Transaction {
                 };
             }
             
-            return resultat.rows[0].obtenir_statistiques_mensuelles;
+            return resultat.rows[0];
         } catch (error) {
             console.error('Erreur obtenirStatistiquesMensuelles:', error);
-            throw new Error('Erreur lors de la récupération des statistiques mensuelles');
+            return {
+                total_revenus: 0,
+                total_depenses: 0,
+                solde: 0,
+                nombre_transactions: 0
+            };
         }
     }
 
@@ -196,17 +201,17 @@ class Transaction {
 
     static async obtenirRevenusParCategorie(utilisateur_id, dateDebut, dateFin) {
         try {
-            const resultat = await query(`
-                SELECT 
-                    c.nom as nom_categorie,
+        const resultat = await query(`
+            SELECT 
+                c.nom as nom_categorie,
                     SUM(t.montant) as montant_total,
                     COUNT(*) as nombre_transactions
                 FROM transactions t
                 JOIN categories c ON t.categorie_id = c.id
                 WHERE t.utilisateur_id = $1 
                     AND t.type = 'revenu'
-                    AND t.date_transaction >= $2
-                    AND t.date_transaction <= $3
+                AND t.date_transaction >= $2 
+                AND t.date_transaction <= $3
                 GROUP BY c.id, c.nom
                 ORDER BY montant_total DESC
             `, [utilisateur_id, dateDebut, dateFin]);
@@ -220,19 +225,19 @@ class Transaction {
 
     static async obtenirEvolutionMensuelle(utilisateur_id, annee) {
         try {
-            const resultat = await query(`
-                SELECT 
-                    EXTRACT(MONTH FROM date_transaction) as mois,
-                    type,
-                    SUM(montant) as montant_total,
-                    COUNT(*) as nombre_transactions
-                FROM transactions
-                WHERE utilisateur_id = $1 
-                    AND EXTRACT(YEAR FROM date_transaction) = $2
-                GROUP BY EXTRACT(MONTH FROM date_transaction), type
-                ORDER BY mois, type
-            `, [utilisateur_id, annee]);
-            
+        const resultat = await query(`
+            SELECT 
+                EXTRACT(MONTH FROM date_transaction) as mois,
+                type,
+                SUM(montant) as montant_total,
+                COUNT(*) as nombre_transactions
+            FROM transactions
+            WHERE utilisateur_id = $1 
+                AND EXTRACT(YEAR FROM date_transaction) = $2
+            GROUP BY EXTRACT(MONTH FROM date_transaction), type
+            ORDER BY mois, type
+        `, [utilisateur_id, annee]);
+        
             return resultat.rows || [];
         } catch (error) {
             console.error('Erreur obtenirEvolutionMensuelle:', error);

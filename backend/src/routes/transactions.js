@@ -456,6 +456,38 @@ router.delete('/:id', auth, async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/balance/summary:
+ *   get:
+ *     summary: Obtenir le résumé du solde utilisateur
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Résumé du solde récupéré avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 solde:
+ *                   type: number
+ *                   example: 2000.00
+ *                 total_revenus:
+ *                   type: number
+ *                   example: 5000.00
+ *                 total_depenses:
+ *                   type: number
+ *                   example: 3000.00
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir le solde
 router.get('/balance/summary', async (req, res, next) => {
   try {
@@ -473,6 +505,58 @@ router.get('/balance/summary', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/stats/monthly/{year}/{month}:
+ *   get:
+ *     summary: Obtenir les statistiques mensuelles
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Année (ex: 2024)
+ *         example: 2024
+ *       - in: path
+ *         name: month
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Mois (1-12)
+ *         example: 8
+ *     responses:
+ *       200:
+ *         description: Statistiques mensuelles récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 annee:
+ *                   type: integer
+ *                   example: 2024
+ *                 mois:
+ *                   type: integer
+ *                   example: 8
+ *                 statistiques:
+ *                   $ref: '#/components/schemas/MonthlyStats'
+ *       400:
+ *         description: Paramètres invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir les statistiques mensuelles
 router.get('/stats/monthly/:year/:month', async (req, res, next) => {
   try {
@@ -494,6 +578,56 @@ router.get('/stats/monthly/:year/:month', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/stats/by-category:
+ *   get:
+ *     summary: Obtenir les dépenses par catégorie
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de début (YYYY-MM-DD)
+ *         example: "2024-08-01"
+ *       - in: query
+ *         name: endDate
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: Date de fin (YYYY-MM-DD)
+ *         example: "2024-08-31"
+ *     responses:
+ *       200:
+ *         description: Dépenses par catégorie récupérées avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 depenses_par_categorie:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/CategoryBreakdown'
+ *       400:
+ *         description: Dates requises
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir les dépenses par catégorie
 router.get('/stats/by-category', async (req, res, next) => {
   try {
@@ -519,6 +653,63 @@ router.get('/stats/by-category', async (req, res, next) => {
   }
 });
 
+/**
+ * @swagger
+ * /api/transactions/stats/trend/{year}:
+ *   get:
+ *     summary: Obtenir l'évolution mensuelle des transactions
+ *     tags: [Transactions]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: year
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: Année (ex: 2024)
+ *         example: 2024
+ *     responses:
+ *       200:
+ *         description: Évolution mensuelle récupérée avec succès
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 annee:
+ *                   type: integer
+ *                   example: 2024
+ *                 evolution_mensuelle:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       mois:
+ *                         type: integer
+ *                         example: 1
+ *                       total_revenus:
+ *                         type: number
+ *                         example: 5000.00
+ *                       total_depenses:
+ *                         type: number
+ *                         example: 3000.00
+ *                       solde:
+ *                         type: number
+ *                         example: 2000.00
+ *       400:
+ *         description: Paramètres invalides
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Token invalide ou manquant
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
 // Obtenir l'évolution mensuelle
 router.get('/stats/trend/:year', async (req, res, next) => {
   try {
