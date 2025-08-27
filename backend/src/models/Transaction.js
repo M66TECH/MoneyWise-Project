@@ -77,12 +77,11 @@ class Transaction {
         const offset = (page - 1) * limit;
         
         let sql = `
-            SELECT 
-                t.*,
-                c.nom as nom_categorie,
-                c.description as description_categorie
-            FROM transactions t
-            LEFT JOIN categories c ON t.categorie_id = c.id
+                    SELECT 
+            t.*,
+            c.nom as nom_categorie
+        FROM transactions t
+        LEFT JOIN categories c ON t.categorie_id = c.id
             WHERE t.utilisateur_id = $1
         `;
         let params = [utilisateur_id];
@@ -118,8 +117,7 @@ class Transaction {
         const resultat = await query(sql, params);
         return resultat.rows.map(ligne => ({
             ...new Transaction(ligne),
-            nom_categorie: ligne.nom_categorie || 'Non catégorisé',
-            description_categorie: ligne.description_categorie || ''
+            nom_categorie: ligne.nom_categorie || 'Non catégorisé'
         }));
     }
 
