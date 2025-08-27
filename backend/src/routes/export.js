@@ -387,7 +387,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
     
     // Cartes de statistiques
     const cardWidth = 60;
-    const cardHeight = 0;
+    const cardHeight = 30;
     const startX = 20;
     const startY = 45;
     
