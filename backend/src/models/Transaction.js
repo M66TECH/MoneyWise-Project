@@ -72,6 +72,57 @@ class Transaction {
         return resultat.rows.map(ligne => new Transaction(ligne));
     }
 
+    static async trouverParUtilisateurAvecCategories(utilisateur_id, options = {}) {
+        const { page = 1, limit = 20, type, categorie_id, startDate, endDate } = options;
+        const offset = (page - 1) * limit;
+        
+        let sql = `
+            SELECT 
+                t.*,
+                c.nom as nom_categorie,
+                c.description as description_categorie
+            FROM transactions t
+            LEFT JOIN categories c ON t.categorie_id = c.id
+            WHERE t.utilisateur_id = $1
+        `;
+        let params = [utilisateur_id];
+        let indexParam = 2;
+        
+        if (type) {
+            sql += ` AND t.type = $${indexParam}`;
+            params.push(type);
+            indexParam++;
+        }
+        
+        if (categorie_id) {
+            sql += ` AND t.categorie_id = $${indexParam}`;
+            params.push(categorie_id);
+            indexParam++;
+        }
+        
+        if (startDate) {
+            sql += ` AND t.date_transaction >= $${indexParam}`;
+            params.push(startDate);
+            indexParam++;
+        }
+        
+        if (endDate) {
+            sql += ` AND t.date_transaction <= $${indexParam}`;
+            params.push(endDate);
+            indexParam++;
+        }
+        
+        sql += ` ORDER BY t.date_transaction DESC LIMIT $${indexParam} OFFSET $${indexParam + 1}`;
+        params.push(limit, offset);
+        
+        const resultat = await query(sql, params);
+        return resultat.rows.map(ligne => ({
+            ...new Transaction(ligne),
+            nom_categorie: ligne.nom_categorie || 'Non catégorisé',
+            description_categorie: ligne.description_categorie || ''
+        }));
+    }
+
     async mettreAJour(donneesTransaction) {
         const { categorie_id, type, montant, description, date_transaction } = donneesTransaction;
         

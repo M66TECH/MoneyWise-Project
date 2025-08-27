@@ -70,7 +70,6 @@ test-*.js
 *test*.js
 diagnostic-*.js
 ajouter-*.js
-
 verifier-*.js
 reinitialiser-*.js
 nettoyer-*.js
@@ -78,6 +77,8 @@ corriger-*.js
 tester-*.js
 test-*.js
 *test*.js
+correction-*.js
+verification-*.js
 
 # Documentation files (local development)
 DOCUMENTATION_*.md
@@ -98,6 +99,13 @@ TEMPLATE_EMAIL_VERIFICATION.md
 migrer-vers-cloudinary.js
 RESUME_IMPLEMENTATION_PHOTO_PROFIL.md
 TEST_PHOTO_PROFIL.md
+GUIDE_*.md
+RAPPORT_*.md
+ANALYSE_*.md
+SWAGGER_*.md
+README_*.md
+CORRECTIONS_*.md
+RESUME_*.md
 
 
 
@@ -113,6 +121,16 @@ RAPPORT_TECHNIQUE_MONEYWISE.md
 README_DATABASE.md
 RESUME_EXECUTIF_MONEYWISE.md
 SWAGGER_DOCUMENTATION.md
+
+# Test and documentation files (comprehensive)
+test-export-*.js
+test-rapport-*.js
+test-alertes-*.js
+test-nouveau-*.js
+test-seuil-*.js
+test-personnalisees-*.js
+verification-*.js
+correction-*.js
 
 # Local configuration files
 .env.example
