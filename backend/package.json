@@ -34,7 +34,12 @@
     "test:export-pdf-complet": "node test-export-pdf-complet.js",
     "test:rapport-mensuel-pdf": "node test-rapport-mensuel-pdf.js",
     "test:rapport-transactions-corrige": "node test-rapport-transactions-corrige.js",
-    "test:frontend-export-complet": "node test-frontend-export-complet.js"
+    "test:frontend-export-complet": "node test-frontend-export-complet.js",
+    "test:export-verification-complete": "node test-export-complet-verification.js",
+    "correction:export-system": "node correction-export-system.js",
+    "test:alertes-email": "node test-alertes-email.js",
+    "test:nouveau-seuil-alerte": "node test-nouveau-seuil-alerte.js",
+    "test:seuil-alerte-direct": "node test-seuil-alerte-direct.js"
   },
   "keywords": [
     "finance",

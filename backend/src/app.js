@@ -35,6 +35,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
     
     const allowedOrigins = [
+      // URLs de développement local
       'http://localhost:5173',  // Vite dev server
       'http://localhost:3000',  // Alternative port
       'http://localhost:8000',  // Test frontend server
@@ -42,20 +43,42 @@ app.use(cors({
       'http://127.0.0.1:5173',  // IP alternative
       'http://127.0.0.1:3000',  // IP alternative
       'http://127.0.0.1:8000',  // IP alternative for test frontend
+      
+      // URLs de production
       'https://moneywise.vercel.app',  // Frontend production Vercel
-      process.env.FRONTEND_URL  // URL de production si définie
+      'https://moneywise-frontend.vercel.app',  // Alternative Vercel
+      'https://moneywise-app.vercel.app',  // Alternative Vercel
+      
+      // URLs Render (frontend déployé sur Render)
+      'https://moneywise-frontend.onrender.com',
+      'https://moneywise-app.onrender.com',
+      'https://moneywise-client.onrender.com',
+      'https://moneywise-backend-187q.onrender.com',
+      
+      // URL depuis variable d'environnement
+      process.env.FRONTEND_URL,
+      process.env.CLIENT_URL,
+      process.env.ALLOWED_ORIGIN
     ].filter(Boolean);
     
+    // En mode développement, autoriser toutes les origines
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ CORS autorisé (dev): ${origin}`);
+      return callback(null, true);
+    }
+    
     if (allowedOrigins.includes(origin)) {
+      console.log(`✅ CORS autorisé: ${origin}`);
       callback(null, true);
     } else {
       console.log(`🚫 CORS bloqué pour l'origine: ${origin}`);
+      console.log(`📋 Origines autorisées:`, allowedOrigins);
       callback(new Error('Non autorisé par CORS'));
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
 app.use(express.json());

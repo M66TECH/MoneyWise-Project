@@ -77,9 +77,12 @@ router.get('/transactions/csv', async (req, res, next) => {
   try {
     const { startDate, endDate, type } = req.query;
 
-    if (!startDate || !endDate) {
+    // Validation des paramètres
+    const validation = validerParametresExport({ startDate, endDate, type });
+    if (!validation.valide) {
       return res.status(400).json({
-        message: 'Date de début et date de fin requises'
+        message: 'Paramètres invalides',
+        erreurs: validation.erreurs
       });
     }
 
@@ -179,9 +182,12 @@ router.get('/transactions/pdf', async (req, res, next) => {
   try {
     const { startDate, endDate, type } = req.query;
 
-    if (!startDate || !endDate) {
+    // Validation des paramètres
+    const validation = validerParametresExport({ startDate, endDate, type });
+    if (!validation.valide) {
       return res.status(400).json({
-        message: 'Date de début et date de fin requises'
+        message: 'Paramètres invalides',
+        erreurs: validation.erreurs
       });
     }
 
@@ -259,7 +265,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
     try {
       const logoUrl = 'https://res.cloudinary.com/dljxkppye/image/upload/v1756213896/logo_aq4isa.jpg';
       doc.addImage(logoUrl, 'JPEG', 20, 15, 45, 25);
-      console.log('✅ Logo ajouté avec succès');
+      
     } catch (error) {
       console.log('⚠️ Erreur lors du chargement du logo:', error.message);
       // Continuer sans logo
@@ -274,8 +280,8 @@ router.get('/transactions/pdf', async (req, res, next) => {
     
     // Informations de la période dans un encadré
     drawRoundedRect(20, 55, 170, 25, 3, colors.light);
-    addText(`📅 Période : ${formaterDate(startDate)} à ${formaterDate(endDate)}`, 30, 65, 12, 'normal', colors.dark);
-    addText(`📊 Nombre de transactions : ${transactions.length}`, 30, 75, 12, 'normal', colors.dark);
+    addText(`Période : ${formaterDate(startDate)} à ${formaterDate(endDate)}`, 30, 65, 12, 'normal', colors.dark);
+    addText(`Nombre de transactions : ${transactions.length}`, 30, 75, 12, 'normal', colors.dark);
     
     // En-têtes du tableau avec style
     const tableY = 95;
@@ -374,31 +380,31 @@ router.get('/transactions/pdf', async (req, res, next) => {
     doc.addPage();
     
     // Titre de la page résumé
-    addText('📈 Résumé Financier', 20, 25, 20, 'bold', colors.primary);
+    addText('Résumé Financier', 20, 25, 20, 'bold', colors.primary);
     
     // Ligne décorative
     drawDecorativeLine(20, 30, 170, colors.primary);
     
     // Cartes de statistiques
-    const cardWidth = 80;
-    const cardHeight = 40;
+    const cardWidth = 60;
+    const cardHeight = 0;
     const startX = 20;
     const startY = 45;
     
     // Carte Revenus
     drawRoundedRect(startX, startY, cardWidth, cardHeight, 5, colors.success);
-    addText('💰 Revenus', startX + 5, startY + 10, 10, 'bold', [255, 255, 255]);
+    addText('Revenus', startX + 5, startY + 10, 10, 'bold', [255, 255, 255]);
     addText(formaterMontant(totalRevenus), startX + 5, startY + 25, 12, 'bold', [255, 255, 255]);
     
     // Carte Dépenses
     drawRoundedRect(startX + cardWidth + 10, startY, cardWidth, cardHeight, 5, colors.danger);
-    addText('💸 Dépenses', startX + cardWidth + 15, startY + 10, 10, 'bold', [255, 255, 255]);
+    addText('Dépenses', startX + cardWidth + 15, startY + 10, 10, 'bold', [255, 255, 255]);
     addText(formaterMontant(totalDepenses), startX + cardWidth + 15, startY + 25, 12, 'bold', [255, 255, 255]);
     
     // Carte Solde - AFFICHAGE COMPLET ET VISIBLE
     const soldeColor = solde >= 0 ? colors.success : colors.danger;
     drawRoundedRect(startX + (cardWidth + 10) * 2, startY, cardWidth, cardHeight, 5, soldeColor);
-    addText('💳 Solde', startX + (cardWidth + 10) * 2 + 5, startY + 10, 10, 'bold', [255, 255, 255]);
+    addText('Solde', startX + (cardWidth + 10) * 2 + 5, startY + 10, 10, 'bold', [255, 255, 255]);
     addText(formaterMontant(solde), startX + (cardWidth + 10) * 2 + 5, startY + 25, 12, 'bold', [255, 255, 255]);
     
     // Tableau récapitulatif détaillé
@@ -416,7 +422,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
     
     // Graphique en barres simple (représentation visuelle)
     const graphY = tableResumeY + 50;
-    addText('📊 Répartition', 20, graphY, 14, 'bold', colors.dark);
+    addText('Répartition', 20, graphY, 14, 'bold', colors.dark);
     
     // Barres de revenus et dépenses
     const maxValue = Math.max(totalRevenus, totalDepenses);
@@ -438,8 +444,8 @@ router.get('/transactions/pdf', async (req, res, next) => {
     // Pied de page avec informations
     const footerY = 250;
     drawRoundedRect(20, footerY, 170, 25, 3, colors.light);
-    addText(`📅 Généré le : ${formaterDate(new Date().toISOString())}`, 30, footerY + 10, 10, 'normal', colors.dark);
-    addText(`📱 MoneyWise - Votre partenaire financier`, 30, footerY + 20, 10, 'normal', colors.primary);
+    addText(`Généré le : ${formaterDate(new Date().toISOString())}`, 30, footerY + 10, 10, 'normal', colors.dark);
+    addText(`MoneyWise - Votre partenaire financier`, 30, footerY + 20, 10, 'normal', colors.primary);
 
     // Définir les headers pour le téléchargement
     const nomFichier = `transactions_${startDate}_${endDate}.pdf`;
@@ -451,7 +457,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
       res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       
-      console.log(`✅ PDF généré avec succès: ${nomFichier} (${pdfBuffer.length} bytes)`);
+      console.log(`PDF généré avec succès: ${nomFichier} (${pdfBuffer.length} bytes)`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error('Erreur génération PDF final:', error);
@@ -514,6 +520,15 @@ router.get('/transactions/json', async (req, res, next) => {
 router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
   try {
     const { year, month } = req.params;
+
+    // Validation des paramètres
+    const validation = validerParametresRapportMensuel({ year, month });
+    if (!validation.valide) {
+      return res.status(400).json({
+        message: 'Paramètres invalides',
+        erreurs: validation.erreurs
+      });
+    }
 
     // Obtenir les statistiques du mois
     const statistiquesMensuelles = await Transaction.obtenirStatistiquesMensuelles(req.utilisateur_id, year, month);
@@ -610,9 +625,9 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
       // Logo
       const logoUrl = 'https://res.cloudinary.com/dljxkppye/image/upload/v1756213896/logo_aq4isa.jpg';
       doc.addImage(logoUrl, 'JPEG', 75, 20, 60, 35);
-      console.log('✅ Logo ajouté avec succès');
+      console.log('Logo ajouté avec succès');
     } catch (error) {
-      console.log('⚠️ Erreur lors du chargement du logo:', error.message);
+      console.log('Erreur lors du chargement du logo:', error.message);
     }
     
     // Titre principal
@@ -663,18 +678,18 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
     
     // Carte Revenus
     drawRoundedRect(startX, startY, cardWidth, cardHeight, 5, colors.success);
-    addText('💰 REVENUS', startX + 5, startY + 10, 10, 'bold', colors.white);
+    addText('REVENUS', startX + 5, startY + 10, 10, 'bold', colors.white);
     addText(formaterMontant(statistiquesMensuelles.total_revenus), startX + 5, startY + 22, 11, 'bold', colors.white);
     
     // Carte Dépenses
     drawRoundedRect(startX + cardWidth + 10, startY, cardWidth, cardHeight, 5, colors.danger);
-    addText('💸 DÉPENSES', startX + cardWidth + 15, startY + 10, 10, 'bold', colors.white);
+    addText('DÉPENSES', startX + cardWidth + 15, startY + 10, 10, 'bold', colors.white);
     addText(formaterMontant(statistiquesMensuelles.total_depenses), startX + cardWidth + 15, startY + 22, 11, 'bold', colors.white);
     
     // Carte Solde
     const soldeColor = statistiquesMensuelles.solde >= 0 ? colors.success : colors.danger;
     drawRoundedRect(startX + (cardWidth + 10) * 2, startY, cardWidth, cardHeight, 5, soldeColor);
-    addText('💳 SOLDE', startX + (cardWidth + 10) * 2 + 5, startY + 10, 10, 'bold', colors.white);
+    addText('SOLDE', startX + (cardWidth + 10) * 2 + 5, startY + 10, 10, 'bold', colors.white);
     addText(formaterMontant(statistiquesMensuelles.solde), startX + (cardWidth + 10) * 2 + 5, startY + 22, 11, 'bold', colors.white);
     
     // Tableau récapitulatif
@@ -779,21 +794,21 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
     addText('Explication des écarts significatifs', 20, 45, 12, 'bold', colors.dark);
     
     if (solde >= 0) {
-      addText('✅ Excédent financier : Le solde est positif, indiquant une', 20, 55, 10, 'normal', colors.dark);
+      addText('Excédent financier : Le solde est positif, indiquant une', 20, 55, 10, 'normal', colors.dark);
       addText('gestion financière saine avec des revenus supérieurs aux dépenses.', 20, 62, 10, 'normal', colors.dark);
     } else {
-      addText('⚠️ Déficit financier : Le solde est négatif, nécessitant', 20, 55, 10, 'normal', colors.dark);
+      addText('Déficit financier : Le solde est négatif, nécessitant', 20, 55, 10, 'normal', colors.dark);
       addText('une attention particulière sur la gestion des dépenses.', 20, 62, 10, 'normal', colors.dark);
     }
     
     addText('Ratio revenus/dépenses : ' + ratioRevenusDepenses.toFixed(2), 20, 75, 10, 'normal', colors.dark);
     
     if (ratioRevenusDepenses > 1.2) {
-      addText('📈 Excellente performance : Les revenus dépassent largement les dépenses', 20, 85, 10, 'normal', colors.success);
+      addText('Excellente performance : Les revenus dépassent largement les dépenses', 20, 85, 10, 'normal', colors.success);
     } else if (ratioRevenusDepenses > 1) {
-      addText('📊 Performance correcte : Équilibre positif maintenu', 20, 85, 10, 'normal', colors.warning);
+      addText('Performance correcte : Équilibre positif maintenu', 20, 85, 10, 'normal', colors.warning);
     } else {
-      addText('📉 Attention requise : Les dépenses dépassent les revenus', 20, 85, 10, 'normal', colors.danger);
+      addText('Attention requise : Les dépenses dépassent les revenus', 20, 85, 10, 'normal', colors.danger);
     }
     
     // Graphique en barres simple
@@ -824,34 +839,34 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
     
     addText('Points forts', 20, 45, 12, 'bold', colors.success);
     if (solde >= 0) {
-      addText('✅ Gestion financière équilibrée', 20, 55, 10, 'normal', colors.dark);
-      addText('✅ Revenus suffisants pour couvrir les dépenses', 20, 62, 10, 'normal', colors.dark);
-      addText('✅ Solde positif maintenu', 20, 69, 10, 'normal', colors.dark);
+      addText('Gestion financière équilibrée', 20, 55, 10, 'normal', colors.dark);
+      addText('Revenus suffisants pour couvrir les dépenses', 20, 62, 10, 'normal', colors.dark);
+      addText('Solde positif maintenu', 20, 69, 10, 'normal', colors.dark);
     } else {
-      addText('✅ Système de suivi financier en place', 20, 55, 10, 'normal', colors.dark);
-      addText('✅ Données complètes disponibles pour analyse', 20, 62, 10, 'normal', colors.dark);
+      addText('Système de suivi financier en place', 20, 55, 10, 'normal', colors.dark);
+      addText('Données complètes disponibles pour analyse', 20, 62, 10, 'normal', colors.dark);
     }
     
     addText('Points d\'attention', 20, 85, 12, 'bold', colors.warning);
     if (solde < 0) {
-      addText('⚠️ Réduire les dépenses non essentielles', 20, 95, 10, 'normal', colors.dark);
-      addText('⚠️ Augmenter les sources de revenus', 20, 102, 10, 'normal', colors.dark);
-      addText('⚠️ Établir un budget mensuel strict', 20, 109, 10, 'normal', colors.dark);
+      addText('Réduire les dépenses non essentielles', 20, 95, 10, 'normal', colors.dark);
+      addText('Augmenter les sources de revenus', 20, 102, 10, 'normal', colors.dark);
+      addText('Établir un budget mensuel strict', 20, 109, 10, 'normal', colors.dark);
     } else {
-      addText('💡 Maintenir cette discipline financière', 20, 95, 10, 'normal', colors.dark);
-      addText('💡 Considérer l\'épargne ou l\'investissement', 20, 102, 10, 'normal', colors.dark);
+      addText('Maintenir cette discipline financière', 20, 95, 10, 'normal', colors.dark);
+      addText('Considérer l\'épargne ou l\'investissement', 20, 102, 10, 'normal', colors.dark);
     }
     
     addText('Recommandations', 20, 125, 12, 'bold', colors.primary);
-    addText('📊 Continuer le suivi régulier des transactions', 20, 135, 10, 'normal', colors.dark);
-    addText('📊 Analyser les tendances sur plusieurs mois', 20, 142, 10, 'normal', colors.dark);
-    addText('📊 Établir des objectifs financiers mensuels', 20, 149, 10, 'normal', colors.dark);
+    addText('Continuer le suivi régulier des transactions', 20, 135, 10, 'normal', colors.dark);
+    addText('Analyser les tendances sur plusieurs mois', 20, 142, 10, 'normal', colors.dark);
+    addText('Établir des objectifs financiers mensuels', 20, 149, 10, 'normal', colors.dark);
     
     // Pied de page
     const footerY = 250;
     drawRoundedRect(20, footerY, 170, 25, 3, colors.light);
-    addText('📅 Rapport généré le : ' + formaterDate(new Date().toISOString()), 30, footerY + 10, 9, 'normal', colors.dark);
-    addText('📱 MoneyWise - Votre partenaire financier', 30, footerY + 20, 9, 'normal', colors.primary);
+    addText('Rapport généré le : ' + formaterDate(new Date().toISOString()), 30, footerY + 10, 9, 'normal', colors.dark);
+    addText('MoneyWise - Votre partenaire financier', 30, footerY + 20, 9, 'normal', colors.primary);
 
     // Définir les headers pour le téléchargement
     const nomFichier = `rapport_mensuel_${year}_${month.toString().padStart(2, '0')}.pdf`;
@@ -863,7 +878,6 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
       res.setHeader('Content-Disposition', `attachment; filename="${nomFichier}"`);
       res.setHeader('Content-Length', pdfBuffer.length);
       
-      console.log(`✅ Rapport mensuel PDF généré avec succès: ${nomFichier} (${pdfBuffer.length} bytes)`);
       res.send(pdfBuffer);
     } catch (error) {
       console.error('Erreur génération rapport PDF:', error);
@@ -880,6 +894,15 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
 router.get('/report/monthly/:year/:month', async (req, res, next) => {
   try {
     const { year, month } = req.params;
+
+    // Validation des paramètres
+    const validation = validerParametresRapportMensuel({ year, month });
+    if (!validation.valide) {
+      return res.status(400).json({
+        message: 'Paramètres invalides',
+        erreurs: validation.erreurs
+      });
+    }
     const { format = 'json' } = req.query;
 
     // Obtenir les statistiques du mois
@@ -1069,5 +1092,273 @@ router.get('/report/yearly/:year', async (req, res, next) => {
     next(erreur);
   }
 });
+
+// ========================================
+// FONCTIONS DE VALIDATION
+// ========================================
+
+/**
+ * Valide une date au format YYYY-MM-DD
+ * @param {string} dateString - Date à valider
+ * @returns {boolean} True si la date est valide
+ */
+function validerDate(dateString) {
+  try {
+    if (!dateString || typeof dateString !== 'string') return false;
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return false;
+    
+    // Vérifier que la date correspond au format YYYY-MM-DD
+    const parts = dateString.split('-');
+    if (parts.length !== 3) return false;
+    
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]);
+    const day = parseInt(parts[2]);
+    
+    if (year < 1900 || year > 2100) return false;
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+    
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+/**
+ * Valide les paramètres d'export
+ * @param {Object} params - Paramètres à valider
+ * @returns {Object} Résultat de validation
+ */
+function validerParametresExport(params) {
+  const { startDate, endDate, type } = params;
+  const erreurs = [];
+  
+  // Validation des dates
+  if (!startDate) {
+    erreurs.push('Date de début requise');
+  } else if (!validerDate(startDate)) {
+    erreurs.push('Format de date de début invalide (utilisez YYYY-MM-DD)');
+  }
+  
+  if (!endDate) {
+    erreurs.push('Date de fin requise');
+  } else if (!validerDate(endDate)) {
+    erreurs.push('Format de date de fin invalide (utilisez YYYY-MM-DD)');
+  }
+  
+  // Validation de la cohérence des dates
+  if (startDate && endDate && validerDate(startDate) && validerDate(endDate)) {
+    const dateDebut = new Date(startDate);
+    const dateFin = new Date(endDate);
+    
+    if (dateDebut > dateFin) {
+      erreurs.push('La date de début ne peut pas être postérieure à la date de fin');
+    }
+    
+    // Vérifier que la période n'est pas trop longue (max 5 ans)
+    const diffTime = Math.abs(dateFin - dateDebut);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const maxDays = 365 * 5; // 5 ans
+    
+    if (diffDays > maxDays) {
+      erreurs.push('La période ne peut pas dépasser 5 ans');
+    }
+  }
+  
+  // Validation du type
+  if (type && !['revenu', 'depense'].includes(type)) {
+    erreurs.push('Type invalide (doit être "revenu" ou "depense")');
+  }
+  
+  return {
+    valide: erreurs.length === 0,
+    erreurs
+  };
+}
+
+/**
+ * Valide les paramètres de rapport mensuel
+ * @param {Object} params - Paramètres à valider
+ * @returns {Object} Résultat de validation
+ */
+function validerParametresRapportMensuel(params) {
+  const { year, month } = params;
+  const erreurs = [];
+  
+  // Validation de l'année
+  if (!year) {
+    erreurs.push('Année requise');
+  } else {
+    const yearNum = parseInt(year);
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
+      erreurs.push('Année invalide (doit être entre 1900 et 2100)');
+    }
+  }
+  
+  // Validation du mois
+  if (!month) {
+    erreurs.push('Mois requis');
+  } else {
+    const monthNum = parseInt(month);
+    if (isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+      erreurs.push('Mois invalide (doit être entre 1 et 12)');
+    }
+  }
+  
+  return {
+    valide: erreurs.length === 0,
+    erreurs
+  };
+}
+
+// ========================================
+// FONCTIONS UTILITAIRES POUR L'EXPORT
+// ========================================
+
+/**
+ * Formate une date au format J-M-AAAA
+ * @param {string} dateString - Date au format ISO ou autre
+ * @returns {string} Date formatée
+ */
+function formaterDate(dateString) {
+  try {
+    if (!dateString) return 'Date invalide';
+    
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Date invalide';
+    
+    const jour = date.getDate();
+    const mois = date.getMonth() + 1;
+    const annee = date.getFullYear();
+    
+    return `${jour}-${mois}-${annee}`;
+  } catch (error) {
+    console.error('Erreur formatage date:', error);
+    return 'Date invalide';
+  }
+}
+
+/**
+ * Formate un montant en FCFA
+ * @param {number|string} montant - Montant à formater
+ * @returns {string} Montant formaté
+ */
+function formaterMontant(montant) {
+  try {
+    if (montant === null || montant === undefined || montant === '') {
+      return '0 FCFA';
+    }
+    
+    const montantNum = parseFloat(montant);
+    if (isNaN(montantNum)) {
+      return '0 FCFA';
+    }
+    
+    // Formater avec séparateurs de milliers
+    const montantFormate = Math.abs(montantNum).toLocaleString('fr-FR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    });
+    
+    return `${montantFormate} FCFA`;
+  } catch (error) {
+    console.error('Erreur formatage montant:', error);
+    return '0 FCFA';
+  }
+}
+
+/**
+ * Nettoie et tronque un texte pour l'affichage
+ * @param {string} texte - Texte à nettoyer
+ * @param {number} maxLength - Longueur maximale
+ * @returns {string} Texte nettoyé
+ */
+function nettoyerTexte(texte, maxLength = 50) {
+  try {
+    if (!texte) return '';
+    
+    // Convertir en string si ce n'est pas déjà le cas
+    let texteString = String(texte);
+    
+    // Supprimer les caractères spéciaux problématiques
+    texteString = texteString
+      .replace(/[^\w\s\-.,!?()]/g, '') // Garder seulement les caractères sûrs
+      .replace(/\s+/g, ' ') // Remplacer les espaces multiples
+      .trim();
+    
+    // Tronquer si nécessaire
+    if (texteString.length > maxLength) {
+      texteString = texteString.substring(0, maxLength - 3) + '...';
+    }
+    
+    return texteString;
+  } catch (error) {
+    console.error('Erreur nettoyage texte:', error);
+    return '';
+  }
+}
+
+/**
+ * Valide et nettoie une transaction
+ * @param {Object} transaction - Transaction à valider
+ * @returns {Object} Transaction validée
+ */
+function validerTransaction(transaction) {
+  try {
+    if (!transaction) {
+      return {
+        id: 'N/A',
+        date: 'Date invalide',
+        type: 'inconnu',
+        montant: 0,
+        categorie: 'Non catégorisé',
+        description: 'Aucune description'
+      };
+    }
+    
+    return {
+      id: transaction.id || 'N/A',
+      date: transaction.date_transaction || transaction.date || 'Date invalide',
+      type: transaction.type || 'inconnu',
+      montant: parseFloat(transaction.montant) || 0,
+      categorie: transaction.nom_categorie || transaction.categorie || 'Non catégorisé',
+      description: transaction.description || 'Aucune description'
+    };
+  } catch (error) {
+    console.error('Erreur validation transaction:', error);
+    return {
+      id: 'N/A',
+      date: 'Date invalide',
+      type: 'inconnu',
+      montant: 0,
+      categorie: 'Non catégorisé',
+      description: 'Aucune description'
+    };
+  }
+}
+
+/**
+ * Vérifie si une URL d'image est valide
+ * @param {string} url - URL à vérifier
+ * @returns {boolean} True si l'URL est valide
+ */
+function estUrlImageValide(url) {
+  try {
+    if (!url || typeof url !== 'string') return false;
+    
+    // Vérifier que c'est une URL valide
+    const urlObj = new URL(url);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch (error) {
+    return false;
+  }
+}
+
+// ========================================
+// ROUTES D'EXPORT
+// ========================================
 
 module.exports = router;

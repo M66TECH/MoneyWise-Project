@@ -130,7 +130,7 @@ class EmailService {
             </p>
             
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${frontendUrl}/verify-email?token=${token}" 
+              <a href="${frontendUrl}verify-email?token=${token}" 
                  style="background: linear-gradient(135deg,rgb(0, 255, 123) 0%,rgb(0, 234, 255) 100%); 
                         color: black; 
                         padding: 15px 30px; 
@@ -271,38 +271,99 @@ class EmailService {
     return 'https://moneywise.vercel.app';
   }
 
+  // Méthodes pour les couleurs et icônes des alertes
+  getAlerteColor(type) {
+    const colors = {
+      danger: '#e74c3c',
+      warning: '#f39c12',
+      info: '#3498db',
+      success: '#27ae60'
+    };
+    return colors[type] || '#95a5a6';
+  }
+
+  getAlerteBorderColor(type) {
+    const colors = {
+      danger: '#c0392b',
+      warning: '#e67e22',
+      info: '#2980b9',
+      success: '#229954'
+    };
+    return colors[type] || '#7f8c8d';
+  }
+
+  getAlerteIcon(type) {
+    const icons = {
+      danger: '🚨',
+      warning: '⚠️',
+      info: 'ℹ️',
+      success: '✅'
+    };
+    return icons[type] || '📊';
+  }
+
   // Nouvelle méthode pour envoyer les alertes par email
   async envoyerAlertesFinancieres(email, prenom, alertes) {
     this.initialiserTransporter();
     
+    // Déterminer le niveau de gravité pour le sujet
+    const alertesCritiques = alertes.filter(a => a.severite === 'critical');
+    const alertesDanger = alertes.filter(a => a.severite === 'high');
+    
+    let sujet = '📊 Alertes Financières - MoneyWise';
+    if (alertesCritiques.length > 0) {
+      sujet = '🚨 URGENT - Solde Critique - MoneyWise';
+    } else if (alertesDanger.length > 0) {
+      sujet = '⚠️ Alertes Importantes - MoneyWise';
+    }
+    
     const mailOptions = {
       from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: '🚨 Alertes Financières - MoneyWise',
+      subject: sujet,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
-            <h1 style="margin: 0; font-size: 28px;">🚨 Alertes MoneyWise</h1>
-            <p style="margin: 10px 0 0 0; opacity: 0.9;">Vos finances nécessitent votre attention</p>
+          <div style="background: ${alertesCritiques.length > 0 ? 'linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)' : 'linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%)'}; color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0;">
+            <h1 style="margin: 0; font-size: 28px;">${alertesCritiques.length > 0 ? '🚨 URGENT' : '⚠️ Alertes'} MoneyWise</h1>
+            <p style="margin: 10px 0 0 0; opacity: 0.9;">${alertesCritiques.length > 0 ? 'Action immédiate requise' : 'Vos finances nécessitent votre attention'}</p>
           </div>
           
           <div style="background: #f8f9fa; padding: 30px; border-radius: 0 0 10px 10px;">
             <h2 style="color: #333; margin-bottom: 20px;">Bonjour ${prenom},</h2>
             
+            ${alertesCritiques.length > 0 ? `
+              <div style="background: #e74c3c; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
+                <h3 style="margin: 0 0 10px 0;">🚨 SITUATION CRITIQUE</h3>
+                <p style="margin: 0; font-weight: bold;">Votre solde financier nécessite une attention immédiate !</p>
+              </div>
+            ` : ''}
+            
             <p style="color: #666; line-height: 1.6; margin-bottom: 20px;">
-              Nous avons détecté des situations qui nécessitent votre attention dans vos finances :
+              Nous avons détecté ${alertes.length} situation${alertes.length > 1 ? 's' : ''} qui nécessitent votre attention dans vos finances :
             </p>
             
             ${alertes.map(alerte => `
               <div style="background: ${this.getAlerteColor(alerte.type)}; border-left: 4px solid ${this.getAlerteBorderColor(alerte.type)}; padding: 15px; margin: 15px 0; border-radius: 4px;">
-                <p style="margin: 0; color: white; font-weight: bold;">
+                <p style="margin: 0; color: white; font-weight: bold; font-size: 14px;">
                   ${this.getAlerteIcon(alerte.type)} ${alerte.message}
                 </p>
                 <p style="margin: 5px 0 0 0; color: rgba(255,255,255,0.8); font-size: 12px;">
-                  Sévérité: ${alerte.severite}
+                  Sévérité: ${alerte.severite.toUpperCase()} | Code: ${alerte.code || 'N/A'}
                 </p>
               </div>
             `).join('')}
+            
+            ${alertesCritiques.length > 0 ? `
+              <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <h4 style="margin: 0 0 10px 0; color: #856404;">💡 Recommandations immédiates :</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                  <li>Vérifiez vos dépenses récentes</li>
+                  <li>Considérez réduire les dépenses non essentielles</li>
+                  <li>Planifiez vos revenus futurs</li>
+                  <li>Contactez votre conseiller financier si nécessaire</li>
+                </ul>
+              </div>
+            ` : ''}
             
             <div style="text-align: center; margin: 30px 0;">
               <a href="${this.getFrontendUrl()}/dashboard" 
@@ -313,8 +374,15 @@ class EmailService {
                         border-radius: 25px; 
                         display: inline-block; 
                         font-weight: bold;">
-                Voir mon Dashboard
+                ${alertesCritiques.length > 0 ? '🔍 Vérifier immédiatement' : 'Voir mon Dashboard'}
               </a>
+            </div>
+            
+            <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid #ddd;">
+              <p style="color: #666; font-size: 12px; margin: 0;">
+                Cet email a été généré automatiquement par MoneyWise.<br>
+                Pour désactiver les alertes, connectez-vous à votre compte.
+              </p>
             </div>
           </div>
         </div>

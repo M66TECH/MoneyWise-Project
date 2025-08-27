@@ -66,26 +66,72 @@ class NotificationService {
         moisCourant
       );
 
-      // Vérifier le solde négatif
-      if (statistiquesMensuelles.solde < 0) {
+      // Seuils configurables
+      const seuils = {
+        soldeCritique: -10000, // Seuil critique en FCFA
+        ratioDepensesRevenus: 0.8, // 80% des revenus
+        joursInactivite: 7, // 7 jours sans transaction
+        seuilAlerteSolde: -5000, // Seuil d'alerte en FCFA
+        seuilSoldeDepenses: 0.15 // 15% des dépenses
+      };
+
+      // 1. Vérifier le solde critique (très négatif)
+      if (statistiquesMensuelles.solde <= seuils.soldeCritique) {
         alertes.push({
           type: 'danger',
-          message: `Votre solde est négatif : ${statistiquesMensuelles.solde.toFixed(2)} FCFA`,
-          severite: 'high'
+          message: `🚨 SOLDE CRITIQUE : Votre solde est de ${statistiquesMensuelles.solde.toFixed(2)} FCFA. Action immédiate requise !`,
+          severite: 'critical',
+          code: 'SOLDE_CRITIQUE'
         });
       }
-
-      // Vérifier les dépenses élevées (>80% des revenus)
-      if (statistiquesMensuelles.total_revenus > 0 && 
-          (statistiquesMensuelles.total_depenses / statistiquesMensuelles.total_revenus) > 0.8) {
+      // 2. Vérifier le solde négatif (alerte)
+      else if (statistiquesMensuelles.solde < 0) {
+        alertes.push({
+          type: 'danger',
+          message: `⚠️ Votre solde est négatif : ${statistiquesMensuelles.solde.toFixed(2)} FCFA`,
+          severite: 'high',
+          code: 'SOLDE_NEGATIF'
+        });
+      }
+      // 3. Vérifier le seuil d'alerte (solde faible)
+      else if (statistiquesMensuelles.solde <= seuils.seuilAlerteSolde) {
         alertes.push({
           type: 'warning',
-          message: 'Vos dépenses représentent plus de 80% de vos revenus ce mois-ci',
-          severite: 'medium'
+          message: `⚠️ Votre solde est faible : ${statistiquesMensuelles.solde.toFixed(2)} FCFA`,
+          severite: 'medium',
+          code: 'SOLDE_FAIBLE'
         });
       }
 
-      // Vérifier l'inactivité (>7 jours sans transaction)
+      // 4. Vérifier les dépenses élevées (>80% des revenus)
+      if (statistiquesMensuelles.total_revenus > 0) {
+        const ratioDepenses = statistiquesMensuelles.total_depenses / statistiquesMensuelles.total_revenus;
+        
+        if (ratioDepenses > seuils.ratioDepensesRevenus) {
+          alertes.push({
+            type: 'warning',
+            message: `📊 Vos dépenses représentent ${(ratioDepenses * 100).toFixed(1)}% de vos revenus ce mois-ci`,
+            severite: 'medium',
+            code: 'DEPENSES_ELEVEES'
+          });
+        }
+      }
+
+      // 5. Vérifier le solde inférieur à 15% des dépenses
+      if (statistiquesMensuelles.total_depenses > 0) {
+        const pourcentageSolde = statistiquesMensuelles.solde / statistiquesMensuelles.total_depenses;
+        
+        if (pourcentageSolde < seuils.seuilSoldeDepenses) {
+          alertes.push({
+            type: 'warning',
+            message: `💰 Votre solde (${statistiquesMensuelles.solde.toFixed(2)} FCFA) représente seulement ${(pourcentageSolde * 100).toFixed(1)}% de vos dépenses mensuelles (${statistiquesMensuelles.total_depenses.toFixed(2)} FCFA). Seuil critique : 15%`,
+            severite: 'high',
+            code: 'SOLDE_FAIBLE_DEPENSES'
+          });
+        }
+      }
+
+      // 6. Vérifier l'inactivité (>7 jours sans transaction)
       const dernieresTransactions = await Transaction.trouverParUtilisateur(utilisateur.id, { 
         limit: 1 
       });
@@ -96,11 +142,12 @@ class NotificationService {
           (new Date() - dateDerniereTransaction) / (1000 * 60 * 60 * 24)
         );
         
-        if (joursDepuisDerniereTransaction > 7) {
+        if (joursDepuisDerniereTransaction > seuils.joursInactivite) {
           alertes.push({
             type: 'info',
-            message: `Aucune transaction depuis ${joursDepuisDerniereTransaction} jours`,
-            severite: 'low'
+            message: `📅 Aucune transaction depuis ${joursDepuisDerniereTransaction} jours`,
+            severite: 'low',
+            code: 'INACTIVITE'
           });
         }
       }
