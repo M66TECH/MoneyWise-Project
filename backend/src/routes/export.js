@@ -86,8 +86,8 @@ router.get('/transactions/csv', async (req, res, next) => {
       });
     }
 
-    // Récupérer toutes les transactions de la période
-    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+    // Récupérer toutes les transactions de la période avec les catégories
+    const transactions = await Transaction.trouverParUtilisateurAvecCategories(req.utilisateur_id, {
       page: 1,
       limit: 10000, // Limite élevée pour l'export
       type,
@@ -191,8 +191,8 @@ router.get('/transactions/pdf', async (req, res, next) => {
       });
     }
 
-    // Récupérer toutes les transactions de la période
-    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+    // Récupérer toutes les transactions de la période avec les catégories
+    const transactions = await Transaction.trouverParUtilisateurAvecCategories(req.utilisateur_id, {
       page: 1,
       limit: 10000,
       type,
@@ -386,7 +386,7 @@ router.get('/transactions/pdf', async (req, res, next) => {
     drawDecorativeLine(20, 30, 170, colors.primary);
     
     // Cartes de statistiques
-    const cardWidth = 60;
+    const cardWidth = 50;
     const cardHeight = 30;
     const startX = 20;
     const startY = 45;
@@ -481,8 +481,8 @@ router.get('/transactions/json', async (req, res, next) => {
       });
     }
 
-    // Récupérer toutes les transactions de la période
-    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+    // Récupérer toutes les transactions de la période avec les catégories
+    const transactions = await Transaction.trouverParUtilisateurAvecCategories(req.utilisateur_id, {
       page: 1,
       limit: 10000,
       type,
@@ -550,8 +550,8 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
       dateFin
     );
 
-    // Obtenir les transactions du mois
-    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+    // Obtenir les transactions du mois avec les catégories
+    const transactions = await Transaction.trouverParUtilisateurAvecCategories(req.utilisateur_id, {
       page: 1,
       limit: 1000,
       startDate: dateDebut,
@@ -660,7 +660,7 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
     
     addText('Contexte des activités', 20, 85, 12, 'bold', colors.dark);
     addText('Période analysée : ' + nomMois, 20, 95, 10, 'normal', colors.dark);
-    addText('Nombre total de transactions : ' + statistiquesMensuelles.nombre_transactions, 20, 102, 10, 'normal', colors.dark);
+    addText('Nombre total de transactions : ' + (statistiquesMensuelles.nombre_transactions || 0), 20, 102, 10, 'normal', colors.dark);
     addText('Date de début : ' + formaterDate(dateDebut), 20, 109, 10, 'normal', colors.dark);
     addText('Date de fin : ' + formaterDate(dateFin), 20, 116, 10, 'normal', colors.dark);
     
@@ -671,7 +671,7 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
     drawDecorativeLine(20, 30, 170, colors.primary);
     
     // Cartes de statistiques
-    const cardWidth = 80;
+    const cardWidth = 50;
     const cardHeight = 35;
     const startX = 20;
     const startY = 45;
@@ -772,12 +772,52 @@ router.get('/report/monthly/:year/:month/pdf', async (req, res, next) => {
         
         addText(nettoyerTexte(depense.nom_categorie, 20), 30, yPos + 2, 9, 'normal', colors.dark);
         addText(formaterMontant(depense.montant_total), 100, yPos + 2, 9, 'bold', colors.danger);
-        addText(depense.pourcentage + '%', 140, yPos + 2, 9, 'normal', colors.dark);
+        const pourcentage = statistiquesMensuelles.total_depenses > 0 ? 
+          ((parseFloat(depense.montant_total) / statistiquesMensuelles.total_depenses) * 100).toFixed(1) : 0;
+        addText(pourcentage + '%', 140, yPos + 2, 9, 'normal', colors.dark);
         
         yPos += 12;
       });
     } else {
       addText('Aucune dépense enregistrée pour cette période', 30, 60, 10, 'normal', colors.dark);
+    }
+    
+    // 5.5. 💰 DÉTAIL DES REVENUS (Nouvelle page)
+    doc.addPage();
+    
+    addText('DÉTAIL DES REVENUS', 20, 25, 16, 'bold', colors.primary);
+    drawDecorativeLine(20, 30, 170, colors.primary);
+    
+    if (revenusParCategorie && revenusParCategorie.length > 0) {
+      // En-tête du tableau
+      const revenusTableY = 45;
+      drawRoundedRect(20, revenusTableY - 5, 170, 15, 3, colors.success);
+      
+      addText('Catégorie', 30, revenusTableY + 2, 10, 'bold', colors.white);
+      addText('Montant', 100, revenusTableY + 2, 10, 'bold', colors.white);
+      addText('Pourcentage', 140, revenusTableY + 2, 10, 'bold', colors.white);
+      
+      // Lignes du tableau
+      let yPos = revenusTableY + 15;
+      revenusParCategorie.forEach((revenu, index) => {
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        const bgColor = index % 2 === 0 ? [248, 249, 250] : [255, 255, 255];
+        drawRoundedRect(20, yPos - 3, 170, 12, 2, bgColor);
+        
+        addText(nettoyerTexte(revenu.nom_categorie, 20), 30, yPos + 2, 9, 'normal', colors.dark);
+        addText(formaterMontant(revenu.montant_total), 100, yPos + 2, 9, 'bold', colors.success);
+        const pourcentage = statistiquesMensuelles.total_revenus > 0 ? 
+          ((parseFloat(revenu.montant_total) / statistiquesMensuelles.total_revenus) * 100).toFixed(1) : 0;
+        addText(pourcentage + '%', 140, yPos + 2, 9, 'normal', colors.dark);
+        
+        yPos += 12;
+      });
+    } else {
+      addText('Aucun revenu enregistré pour cette période', 30, 60, 10, 'normal', colors.dark);
     }
     
     // 6. 📈 ANALYSE DES ÉCARTS (Nouvelle page)
@@ -918,8 +958,15 @@ router.get('/report/monthly/:year/:month', async (req, res, next) => {
       dateFin
     );
 
-    // Obtenir les transactions du mois
-    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
+    // Obtenir les revenus par catégorie
+    const revenusParCategorie = await Transaction.obtenirRevenusParCategorie(
+      req.utilisateur_id,
+      dateDebut,
+      dateFin
+    );
+
+    // Obtenir les transactions du mois avec les catégories
+    const transactions = await Transaction.trouverParUtilisateurAvecCategories(req.utilisateur_id, {
       page: 1,
       limit: 1000,
       startDate: dateDebut,
@@ -1252,7 +1299,16 @@ function formaterMontant(montant) {
       return '0 FCFA';
     }
     
-    const montantNum = parseFloat(montant);
+    // Nettoyer le montant si c'est une chaîne avec des caractères spéciaux
+    let montantNettoye = montant;
+    if (typeof montant === 'string') {
+      // Supprimer les espaces, les /, et autres caractères non numériques sauf le point et la virgule
+      montantNettoye = montant.replace(/[^\d.,]/g, '');
+      // Remplacer la virgule par un point pour la conversion
+      montantNettoye = montantNettoye.replace(',', '.');
+    }
+    
+    const montantNum = parseFloat(montantNettoye);
     if (isNaN(montantNum)) {
       return '0 FCFA';
     }
@@ -1319,13 +1375,27 @@ function validerTransaction(transaction) {
       };
     }
     
+    // Amélioration de la gestion des catégories
+    let categorie = 'Non catégorisé';
+    if (transaction.nom_categorie && transaction.nom_categorie.trim() !== '') {
+      categorie = transaction.nom_categorie.trim();
+    } else if (transaction.categorie && transaction.categorie.trim() !== '') {
+      categorie = transaction.categorie.trim();
+    }
+    
+    // Amélioration de la gestion des descriptions
+    let description = 'Aucune description';
+    if (transaction.description && transaction.description.trim() !== '') {
+      description = transaction.description.trim();
+    }
+    
     return {
       id: transaction.id || 'N/A',
       date: transaction.date_transaction || transaction.date || 'Date invalide',
       type: transaction.type || 'inconnu',
       montant: parseFloat(transaction.montant) || 0,
-      categorie: transaction.nom_categorie || transaction.categorie || 'Non catégorisé',
-      description: transaction.description || 'Aucune description'
+      categorie: categorie,
+      description: description
     };
   } catch (error) {
     console.error('Erreur validation transaction:', error);

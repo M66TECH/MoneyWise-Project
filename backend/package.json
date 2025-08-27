@@ -40,7 +40,10 @@
     "test:alertes-email": "node test-alertes-email.js",
     "test:nouveau-seuil-alerte": "node test-nouveau-seuil-alerte.js",
     "test:seuil-alerte-direct": "node test-seuil-alerte-direct.js",
-    "test:alertes-personnalisees": "node test-alertes-personnalisees.js"
+    "test:alertes-personnalisees": "node test-alertes-personnalisees.js",
+    "test:rapport-mensuel-ameliore": "node test-rapport-mensuel-ameliore.js",
+    "test:export-transactions-corrige": "node test-export-transactions-corrige.js",
+    "verifier-donnees-export": "node verification-donnees-export.js"
   },
   "keywords": [
     "finance",
