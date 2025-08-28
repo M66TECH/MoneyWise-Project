@@ -26,6 +26,7 @@
     "db:seed": "psql -U postgres -d moneywise -f src/database/seed.sql",
     "db:reset": "dropdb -U postgres moneywise && npm run db:create && npm run db:init && npm run db:seed",
     "test:cors": "node test-cors-vercel.js",
+    "test:cors:nouvelle-url": "node test-cors-nouvelle-url.js",
     "test:url-config": "node test-url-config.js",
     "test:dev-urls": "node test-dev-urls.js",
     "db:remove-theme": "node supprimer-colonne-theme.js",
@@ -80,15 +81,3 @@
   }
 }
 
-    "nodemailer": "^7.0.5",
-    "pg": "^8.16.3",
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^5.0.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  }
-}
