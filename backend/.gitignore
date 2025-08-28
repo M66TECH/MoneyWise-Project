@@ -148,3 +148,30 @@ test-export-json.js
 
 # Uploaded files
 uploads/
+
+# Test and documentation files (comprehensive)
+test-export-*.js
+test-rapport-*.js
+test-alertes-*.js
+test-nouveau-*.js
+test-seuil-*.js
+test-personnalisees-*.js
+verification-*.js
+correction-*.js
+documentation-generator.js
+RAPPORT_GENERATION_DOCUMENTS_PDF.md
+RAPPORT_FINAL_CORRECTION_FORMATAGE_MONTANTS.md
+generer-et-analyser-pdf.js
+test-formater-montant-direct.js
+test-pdf-direct.js
+analyser-pdf.js
+verifier-donnees-bd.js
+test-export-json.js
+
+# Local configuration files
+.env.example
+
+# Local development files
+
+# Uploaded files
+uploads/

@@ -1052,3 +1052,51 @@ router.post('/reset-password', async (req, res, next) => {
 
 
 module.exports = router;
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        message: 'Le mot de passe doit contenir au moins 6 caractères'
+      });
+    }
+
+    // Trouver le token en base
+    const resetToken = await PasswordResetToken.trouverParToken(token);
+    if (!resetToken) {
+      return res.status(404).json({
+        message: 'Token invalide ou expiré'
+      });
+    }
+
+    // Trouver l'utilisateur
+    const utilisateur = await Utilisateur.trouverParId(resetToken.utilisateur_id);
+    if (!utilisateur) {
+      return res.status(404).json({
+        message: 'Utilisateur non trouvé'
+      });
+    }
+
+    // Marquer le token comme utilisé
+    await resetToken.marquerCommeUtilise();
+
+    // Changer le mot de passe
+    await utilisateur.changerMotDePasse(newPassword);
+
+    // Envoyer un email de confirmation
+    try {
+      await emailService.envoyerEmailConfirmation(utilisateur.email, utilisateur.prenom);
+    } catch (emailError) {
+      console.error('Erreur envoi email de confirmation:', emailError);
+      // Ne pas faire échouer le processus si l'email de confirmation échoue
+    }
+
+    res.json({
+      message: 'Mot de passe réinitialisé avec succès'
+    });
+  } catch (erreur) {
+    next(erreur);
+  }
+});
+
+
+
+module.exports = router;

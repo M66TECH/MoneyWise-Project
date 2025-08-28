@@ -38,16 +38,14 @@ app.use(cors({
       // URLs de développement local
       'http://localhost:5173',  // Vite dev server
       'http://localhost:3000',  // Alternative port
-      'http://localhost:8000',  // Test frontend server
       'http://localhost:8080',  // Alternative port
       'http://127.0.0.1:5173',  // IP alternative
-      'http://127.0.0.1:3000',  // IP alternative
-      'http://127.0.0.1:8000',  // IP alternative for test frontend
       
       // URLs de production
       'https://moneywise.vercel.app',  // Frontend production Vercel
       'https://moneywise-frontend.vercel.app',  // Alternative Vercel
       'https://moneywise-app.vercel.app',  // Alternative Vercel
+      'https://money-wise-coral.vercel.app',  // Nouveau frontend Vercel
       
       // URLs Render (frontend déployé sur Render)
       'https://moneywise-frontend.onrender.com',
@@ -183,6 +181,5 @@ async function demarrerServeur() {
 }
 
 demarrerServeur();
-
 
 module.exports = app;

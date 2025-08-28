@@ -333,3 +333,102 @@ class Transaction {
 }
 
 module.exports = Transaction;
+
+            ORDER BY mois, type
+        `, [utilisateur_id, annee]);
+        
+            return resultat.rows || [];
+        } catch (error) {
+            console.error('Erreur obtenirEvolutionMensuelle:', error);
+            throw new Error('Erreur lors de la récupération de l\'évolution mensuelle');
+        }
+    }
+
+    static async obtenirResume(utilisateur_id) {
+        const resultat = await query(`
+            SELECT 
+                COUNT(*) as nombre_total_transactions,
+                COUNT(CASE WHEN type = 'revenu' THEN 1 END) as nombre_revenus,
+                COUNT(CASE WHEN type = 'depense' THEN 1 END) as nombre_depenses,
+                SUM(CASE WHEN type = 'revenu' THEN montant ELSE 0 END) as total_revenus,
+                SUM(CASE WHEN type = 'depense' THEN montant ELSE 0 END) as total_depenses,
+                AVG(montant) as montant_moyen
+            FROM transactions
+            WHERE utilisateur_id = $1
+        `, [utilisateur_id]);
+        
+        const resume = resultat.rows[0];
+        resume.solde = parseFloat(resume.total_revenus || 0) - parseFloat(resume.total_depenses || 0);
+        
+        return resume;
+    }
+
+    static async obtenirTotalRevenus(utilisateur_id) {
+        const resultat = await query(`
+            SELECT COALESCE(SUM(montant), 0) as total_revenus
+            FROM transactions
+            WHERE utilisateur_id = $1 AND type = 'revenu'
+        `, [utilisateur_id]);
+        
+        return parseFloat(resultat.rows[0].total_revenus);
+    }
+
+    static async obtenirTotalDepenses(utilisateur_id) {
+        const resultat = await query(`
+            SELECT COALESCE(SUM(montant), 0) as total_depenses
+            FROM transactions
+            WHERE utilisateur_id = $1 AND type = 'depense'
+        `, [utilisateur_id]);
+        
+        return parseFloat(resultat.rows[0].total_depenses);
+    }
+
+    static async obtenirTransactionsAvecCategories(utilisateur_id, options = {}) {
+        const { page = 1, limit = 20, type, categorie_id, startDate, endDate } = options;
+        const offset = (page - 1) * limit;
+        
+        let sql = `
+            SELECT 
+                t.*,
+                c.nom as nom_categorie,
+                c.couleur as couleur_categorie
+            FROM transactions t
+            JOIN categories c ON t.categorie_id = c.id
+            WHERE t.utilisateur_id = $1
+        `;
+        let params = [utilisateur_id];
+        let indexParam = 2;
+        
+        if (type) {
+            sql += ` AND t.type = $${indexParam}`;
+            params.push(type);
+            indexParam++;
+        }
+        
+        if (categorie_id) {
+            sql += ` AND t.categorie_id = $${indexParam}`;
+            params.push(categorie_id);
+            indexParam++;
+        }
+        
+        if (startDate) {
+            sql += ` AND t.date_transaction >= $${indexParam}`;
+            params.push(startDate);
+            indexParam++;
+        }
+        
+        if (endDate) {
+            sql += ` AND t.date_transaction <= $${indexParam}`;
+            params.push(endDate);
+            indexParam++;
+        }
+        
+        sql += ` ORDER BY t.date_transaction DESC LIMIT $${indexParam} OFFSET $${indexParam + 1}`;
+        params.push(limit, offset);
+        
+        const resultat = await query(sql, params);
+        return resultat.rows.map(ligne => new Transaction(ligne));
+    }
+}
+
+module.exports = Transaction;

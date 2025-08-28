@@ -240,3 +240,106 @@ const options = {
 const specs = swaggerJsdoc(options);
 
 module.exports = specs;
+
+            solde: { type: 'number', example: 2000.00 },
+            nombre_transactions: { type: 'integer', example: 25 }
+          }
+        },
+        CategoryBreakdown: {
+          type: 'object',
+          properties: {
+            categorie_id: { type: 'integer', example: 1 },
+            nom_categorie: { type: 'string', example: 'Restaurant' },
+            couleur: { type: 'string', example: '#FF6B6B' },
+            total_montant: { type: 'number', example: 500.00 },
+            nombre_transactions: { type: 'integer', example: 10 },
+            pourcentage: { type: 'number', example: 16.67 }
+          }
+        },
+        AlertRequest: {
+          type: 'object',
+          properties: {
+            type: { 
+              type: 'string', 
+              enum: ['solde_negatif', 'seuil_critique', 'depense_elevee', 'personnalise'],
+              example: 'seuil_critique',
+              description: 'Type d\'alerte'
+            },
+            severite: { 
+              type: 'string', 
+              enum: ['faible', 'moyenne', 'elevee', 'critique'],
+              example: 'moyenne',
+              description: 'Niveau de sévérité'
+            },
+            message: { 
+              type: 'string', 
+              example: 'Votre solde est faible',
+              description: 'Message personnalisé (optionnel)'
+            }
+          }
+        },
+        AlertResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean', example: true },
+            message: { type: 'string', example: 'Alerte envoyée avec succès' },
+            alert_type: { type: 'string', example: 'seuil_critique' },
+            severite: { type: 'string', example: 'moyenne' }
+          }
+        },
+        ExportRequest: {
+          type: 'object',
+          properties: {
+            startDate: { 
+              type: 'string', 
+              format: 'date',
+              example: '2024-08-01',
+              description: 'Date de début (YYYY-MM-DD)'
+            },
+            endDate: { 
+              type: 'string', 
+              format: 'date',
+              example: '2024-08-31',
+              description: 'Date de fin (YYYY-MM-DD)'
+            }
+          }
+        },
+        MonthlyReport: {
+          type: 'object',
+          properties: {
+            annee: { type: 'integer', example: 2024 },
+            mois: { type: 'integer', example: 8 },
+            total_revenus: { type: 'number', example: 5000.00 },
+            total_depenses: { type: 'number', example: 3000.00 },
+            solde: { type: 'number', example: 2000.00 },
+            nombre_transactions: { type: 'integer', example: 25 },
+            depenses_par_categorie: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/CategoryBreakdown'
+              }
+            },
+            revenus_par_categorie: {
+              type: 'array',
+              items: {
+                $ref: '#/components/schemas/CategoryBreakdown'
+              }
+            }
+          }
+        },
+        Error: {
+          type: 'object',
+          properties: {
+            message: { type: 'string', example: 'Message d\'erreur' },
+            error: { type: 'string', example: 'Détails de l\'erreur' }
+          }
+        }
+      }
+    }
+  },
+  apis: ['./src/routes/*.js', './src/app.js']
+};
+
+const specs = swaggerJsdoc(options);
+
+module.exports = specs;
