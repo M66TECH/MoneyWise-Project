@@ -268,7 +268,7 @@ class EmailService {
     }
     
     // En production, utiliser l'URL Vercel
-    return 'https://moneywise.vercel.app';
+    return 'https://money-wise-coral.vercel.app';
   }
 
   // Méthodes pour les couleurs et icônes des alertes
