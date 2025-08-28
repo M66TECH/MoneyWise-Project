@@ -199,3 +199,69 @@ class NotificationService {
 }
 
 module.exports = new NotificationService();
+
+      });
+
+      if (dernieresTransactions.length > 0) {
+        const dateDerniereTransaction = new Date(dernieresTransactions[0].date_transaction);
+        const joursDepuisDerniereTransaction = Math.floor(
+          (new Date() - dateDerniereTransaction) / (1000 * 60 * 60 * 24)
+        );
+        
+        if (joursDepuisDerniereTransaction > seuils.joursInactivite) {
+          alertes.push({
+            type: 'info',
+            message: `📅 Aucune transaction depuis ${joursDepuisDerniereTransaction} jours`,
+            severite: 'low',
+            code: 'INACTIVITE'
+          });
+        }
+      }
+
+      let emailSent = false;
+
+      // Envoyer les alertes par email si demandé et s'il y en a
+      if (envoyerEmail && alertes.length > 0) {
+        console.log(`📧 Envoi de ${alertes.length} alertes à ${utilisateur.email}`);
+        
+        try {
+          await emailService.envoyerAlertesFinancieres(
+            utilisateur.email,
+            utilisateur.prenom,
+            alertes
+          );
+          console.log(`✅ Alertes envoyées à ${utilisateur.email}`);
+          emailSent = true;
+        } catch (emailError) {
+          console.error(`❌ Erreur envoi email à ${utilisateur.email}:`, emailError);
+        }
+      } else if (alertes.length > 0) {
+        console.log(`ℹ️ ${alertes.length} alertes détectées pour ${utilisateur.email} (email non envoyé)`);
+      } else {
+        console.log(`ℹ️ Aucune alerte pour ${utilisateur.email}`);
+      }
+
+      return {
+        alertes,
+        emailSent,
+        utilisateur: {
+          id: utilisateur.id,
+          email: utilisateur.email,
+          prenom: utilisateur.prenom
+        }
+      };
+
+    } catch (error) {
+      console.error(`❌ Erreur vérification alertes pour ${utilisateur.email}:`, error);
+      throw error;
+    }
+  }
+
+  // Méthode pour forcer la vérification immédiate
+  async verifierMaintenant() {
+    console.log('🔍 Vérification immédiate des alertes...');
+    await this.verifierAlertesFinancieres();
+  }
+}
+
+module.exports = new NotificationService();

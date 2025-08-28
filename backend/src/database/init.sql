@@ -164,3 +164,4 @@ FROM categories c
 LEFT JOIN transactions t ON c.id = t.categorie_id
 GROUP BY t.utilisateur_id, c.id, c.nom, c.couleur, c.type;
 
+
