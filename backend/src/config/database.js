@@ -55,27 +55,3 @@ module.exports = {
   getClient,
   pool
 };
-
-pool.on('error', (err) => {
-  console.error('❌ Erreur de connexion PostgreSQL:', err);
-});
-
-// Fonction pour exécuter des requêtes avec gestion d'erreurs
-const query = async (text, params) => {
-  try {
-    const result = await pool.query(text, params);
-    return result;
-  } catch (error) {
-    console.error('❌ Erreur de requête PostgreSQL:', error);
-    throw error;
-  }
-};
-
-// Fonction pour obtenir un client pour les transactions
-const getClient = () => pool.connect();
-
-module.exports = {
-  query,
-  getClient,
-  pool
-};

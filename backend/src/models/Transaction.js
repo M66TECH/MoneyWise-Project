@@ -138,32 +138,55 @@ class Transaction {
         return true;
     }
 
-    static async obtenirSolde(utilisateur_id) {
-        const resultat = await query(
-            'SELECT obtenir_solde_utilisateur($1) as solde',
-            [utilisateur_id]
-        );
-        
-        return parseFloat(resultat.rows[0].solde);
+        static async obtenirSolde(utilisateur_id) {
+        try {
+            const resultat = await query(`
+                SELECT 
+                    COALESCE(SUM(CASE WHEN type = 'revenu' THEN montant ELSE 0 END), 0) as total_revenus,
+                    COALESCE(SUM(CASE WHEN type = 'depense' THEN montant ELSE 0 END), 0) as total_depenses
+                FROM transactions
+                WHERE utilisateur_id = $1
+            `, [utilisateur_id]);
+            
+            const stats = resultat.rows[0];
+            const totalRevenus = parseFloat(stats.total_revenus || 0);
+            const totalDepenses = parseFloat(stats.total_depenses || 0);
+            
+            return totalRevenus - totalDepenses;
+        } catch (error) {
+            console.error('Erreur obtenirSolde:', error);
+            return 0;
+        }
     }
 
-    static async obtenirStatistiquesMensuelles(utilisateur_id, annee, mois) {
+        static async obtenirStatistiquesMensuelles(utilisateur_id, annee, mois) {
         try {
-            const resultat = await query(
-                'SELECT total_revenus, total_depenses, solde, nombre_transactions FROM obtenir_statistiques_mensuelles($1, $2, $3)',
-                [utilisateur_id, annee, mois]
-            );
+            // Calculer les dates de début et fin du mois
+            const dateDebut = new Date(annee, mois - 1, 1).toISOString().split('T')[0];
+            const dateFin = new Date(annee, mois, 0).toISOString().split('T')[0];
             
-            if (resultat.rows.length === 0) {
-                return {
-                    total_revenus: 0,
-                    total_depenses: 0,
-                    solde: 0,
-                    nombre_transactions: 0
-                };
-            }
+            const resultat = await query(`
+                SELECT 
+                    COALESCE(SUM(CASE WHEN type = 'revenu' THEN montant ELSE 0 END), 0) as total_revenus,
+                    COALESCE(SUM(CASE WHEN type = 'depense' THEN montant ELSE 0 END), 0) as total_depenses,
+                    COALESCE(COUNT(*), 0) as nombre_transactions
+                FROM transactions
+                WHERE utilisateur_id = $1 
+                    AND date_transaction >= $2 
+                    AND date_transaction <= $3
+            `, [utilisateur_id, dateDebut, dateFin]);
             
-            return resultat.rows[0];
+            const stats = resultat.rows[0];
+            const totalRevenus = parseFloat(stats.total_revenus || 0);
+            const totalDepenses = parseFloat(stats.total_depenses || 0);
+            const solde = totalRevenus - totalDepenses;
+            
+            return {
+                total_revenus: totalRevenus,
+                total_depenses: totalDepenses,
+                solde: solde,
+                nombre_transactions: parseInt(stats.nombre_transactions || 0)
+            };
         } catch (error) {
             console.error('Erreur obtenirStatistiquesMensuelles:', error);
             return {
@@ -175,51 +198,53 @@ class Transaction {
         }
     }
 
-    static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin) {
+        static async obtenirDepensesParCategorie(utilisateur_id, dateDebut, dateFin, type = 'depense') {
         try {
             const resultat = await query(`
                 SELECT 
                     c.nom as nom_categorie,
-                    SUM(t.montant) as montant_total,
+                    c.couleur as couleur_categorie,
+                    COALESCE(SUM(t.montant), 0) as montant_total,
                     COUNT(*) as nombre_transactions
                 FROM transactions t
                 JOIN categories c ON t.categorie_id = c.id
                 WHERE t.utilisateur_id = $1 
-                    AND t.type = 'depense'
-                    AND t.date_transaction >= $2
-                    AND t.date_transaction <= $3
-                GROUP BY c.id, c.nom
+                    AND t.type = $2
+                    AND t.date_transaction >= $3
+                    AND t.date_transaction <= $4
+                GROUP BY c.id, c.nom, c.couleur
                 ORDER BY montant_total DESC
-            `, [utilisateur_id, dateDebut, dateFin]);
+            `, [utilisateur_id, type, dateDebut, dateFin]);
             
             return resultat.rows || [];
         } catch (error) {
             console.error('Erreur obtenirDepensesParCategorie:', error);
-            throw new Error('Erreur lors de la récupération des dépenses par catégorie');
+            return [];
         }
     }
 
-    static async obtenirRevenusParCategorie(utilisateur_id, dateDebut, dateFin) {
+        static async obtenirRevenusParCategorie(utilisateur_id, dateDebut, dateFin) {
         try {
-        const resultat = await query(`
-            SELECT 
-                c.nom as nom_categorie,
-                    SUM(t.montant) as montant_total,
+            const resultat = await query(`
+                SELECT 
+                    c.nom as nom_categorie,
+                    c.couleur as couleur_categorie,
+                    COALESCE(SUM(t.montant), 0) as montant_total,
                     COUNT(*) as nombre_transactions
                 FROM transactions t
                 JOIN categories c ON t.categorie_id = c.id
                 WHERE t.utilisateur_id = $1 
                     AND t.type = 'revenu'
-                AND t.date_transaction >= $2 
-                AND t.date_transaction <= $3
-                GROUP BY c.id, c.nom
+                    AND t.date_transaction >= $2 
+                    AND t.date_transaction <= $3
+                GROUP BY c.id, c.nom, c.couleur
                 ORDER BY montant_total DESC
             `, [utilisateur_id, dateDebut, dateFin]);
             
             return resultat.rows || [];
         } catch (error) {
             console.error('Erreur obtenirRevenusParCategorie:', error);
-            throw new Error('Erreur lors de la récupération des revenus par catégorie');
+            return [];
         }
     }
 
@@ -329,19 +354,6 @@ class Transaction {
         
         const resultat = await query(sql, params);
         return resultat.rows.map(ligne => new Transaction(ligne));
-    }
-}
-
-module.exports = Transaction;
-
-            ORDER BY mois, type
-        `, [utilisateur_id, annee]);
-        
-            return resultat.rows || [];
-        } catch (error) {
-            console.error('Erreur obtenirEvolutionMensuelle:', error);
-            throw new Error('Erreur lors de la récupération de l\'évolution mensuelle');
-        }
     }
 
     static async obtenirResume(utilisateur_id) {

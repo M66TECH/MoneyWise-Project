@@ -52,13 +52,13 @@ router.use(auth);
  *         schema:
  *           type: string
  *           format: date
- *         description: Date de début (YYYY-MM-DD)
+ *         description: "Date de début (YYYY-MM-DD)"
  *       - in: query
  *         name: endDate
  *         schema:
  *           type: string
  *           format: date
- *         description: Date de fin (YYYY-MM-DD)
+ *         description: "Date de fin (YYYY-MM-DD)"
  *     responses:
  *       200:
  *         description: Liste des transactions récupérée avec succès
@@ -519,7 +519,7 @@ router.get('/balance/summary', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: Année (ex: 2024)
+ *         description: "Année (ex: 2024)"
  *         example: 2024
  *       - in: path
  *         name: month
@@ -667,198 +667,7 @@ router.get('/stats/by-category', async (req, res, next) => {
  *         required: true
  *         schema:
  *           type: integer
- *         description: Année (ex: 2024)
- *         example: 2024
- *     responses:
- *       200:
- *         description: Évolution mensuelle récupérée avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 annee:
- *                   type: integer
- *                   example: 2024
- *                 evolution_mensuelle:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       mois:
- *                         type: integer
- *                         example: 1
- *                       total_revenus:
- *                         type: number
- *                         example: 5000.00
- *                       total_depenses:
- *                         type: number
- *                         example: 3000.00
- *                       solde:
- *                         type: number
- *                         example: 2000.00
- *       400:
- *         description: Paramètres invalides
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *       401:
- *         description: Token invalide ou manquant
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-// Obtenir l'évolution mensuelle
-router.get('/stats/trend/:year', async (req, res, next) => {
-  try {
-    const { year } = req.params;
-    
-    const evolutionMensuelle = await Transaction.obtenirEvolutionMensuelle(
-      req.utilisateur_id,
-      parseInt(year)
-    );
-
-    res.json({
-      annee: parseInt(year),
-      evolution_mensuelle: evolutionMensuelle
-    });
-  } catch (erreur) {
-    next(erreur);
-  }
-});
-
-/**
- * @swagger
- * /api/transactions/by-category/{categoryId}:
- *   get:
- *     summary: Obtenir les transactions par catégorie
- *     tags: [Transactions]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: categoryId
- *         required: true
- *         schema:
- *           type: integer
- *         description: ID de la catégorie
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           default: 1
- *         description: Numéro de page
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *           default: 20
- *         description: Nombre d'éléments par page
- *       - in: query
- *         name: startDate
- *         schema:
- *           type: string
- *           format: date
- *         description: Date de début (YYYY-MM-DD)
- *       - in: query
- *         name: endDate
- *         schema:
- *           type: string
- *           format: date
- *         description: Date de fin (YYYY-MM-DD)
- *     responses:
- *       200:
- *         description: Transactions par catégorie récupérées avec succès
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 transactions:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Transaction'
- *                 pagination:
- *                   type: object
- *                   properties:
- *                     page:
- *                       type: integer
- *                     limit:
- *                       type: integer
- *       404:
- *         description: Catégorie non trouvée
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-// Obtenir les transactions par catégorie
-router.get('/by-category/:categoryId', auth, async (req, res, next) => {
-  try {
-    const { categoryId } = req.params;
-    const { page = 1, limit = 20, startDate, endDate } = req.query;
-
-    // Vérifier que la catégorie appartient à l'utilisateur
-    const categorie = await Categorie.trouverParId(categoryId);
-    if (!categorie || categorie.utilisateur_id !== req.utilisateur_id) {
-      return res.status(404).json({
-        message: 'Catégorie non trouvée'
-      });
-    }
-
-    const transactions = await Transaction.trouverParUtilisateur(req.utilisateur_id, {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      categorie_id: categoryId,
-      startDate,
-      endDate
-    });
-
-    res.json({
-      transactions,
-      pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit)
-      }
-    });
-  } catch (erreur) {
-    next(erreur);
-  }
-});
-
-module.exports = router;
-
-    const depensesParCategorie = await Transaction.obtenirDepensesParCategorie(
-      req.utilisateur_id,
-      startDate,
-      endDate
-    );
-
-    res.json({
-      depenses_par_categorie: depensesParCategorie
-    });
-  } catch (erreur) {
-    next(erreur);
-  }
-});
-
-/**
- * @swagger
- * /api/transactions/stats/trend/{year}:
- *   get:
- *     summary: Obtenir l'évolution mensuelle des transactions
- *     tags: [Transactions]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: year
- *         required: true
- *         schema:
- *           type: integer
- *         description: Année (ex: 2024)
+ *         description: "Année (ex: 2024)"
  *         example: 2024
  *     responses:
  *       200:
