@@ -27,6 +27,7 @@
     "db:reset": "dropdb -U postgres moneywise && npm run db:create && npm run db:init && npm run db:seed",
     "test:cors": "node test-cors-vercel.js",
     "test:cors:nouvelle-url": "node test-cors-nouvelle-url.js",
+    "test:final-cors": "node test-final-cors.js",
     "test:url-config": "node test-url-config.js",
     "test:dev-urls": "node test-dev-urls.js",
     "db:remove-theme": "node supprimer-colonne-theme.js",

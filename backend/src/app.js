@@ -14,7 +14,8 @@ const notificationRoutes = require('./routes/notifications');
 const { errorHandler } = require('./middleware/errorHandler');
 const notificationService = require('./services/notificationService');
 
-const { initialiserBaseDeDonneesRender } = require('../init-db-render');
+// Import conditionnel pour éviter les problèmes d'async au niveau du module
+let initialiserBaseDeDonneesRender = () => Promise.resolve();
 
 
 // Configuration des variables d'environnement
@@ -151,35 +152,26 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 
 
-// Initialiser la base de données au démarrage
-async function demarrerServeur() {
-  try {
-    // Initialiser la base de données
-    console.log('🔄 Tentative d\'initialisation de la base de données...');
-    await initialiserBaseDeDonneesRender();
-    console.log('✅ Base de données initialisée avec succès !');
+// Démarrer le serveur seulement si ce fichier est exécuté directement
+if (require.main === module) {
+  // Démarrer le serveur immédiatement
+  app.listen(PORT, () => {
+    console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
+    console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
     
-    // Démarrer le serveur
-    app.listen(PORT, () => {
-      console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
-      console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
-      
-      // Démarrer le service de notifications
-      notificationService.start();
-    });
-  } catch (erreur) {
-    console.error('❌ Erreur lors de l\'initialisation de la base de données:', erreur.message);
-    console.log('⚠️ Démarrage du serveur sans initialisation de la base de données...');
+    // Démarrer le service de notifications
+    notificationService.start();
     
-    // Démarrer le serveur même si l'initialisation échoue
-    app.listen(PORT, () => {
-      console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
-      console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
-      console.log('⚠️ La base de données n\'a pas été initialisée. Certaines fonctionnalités peuvent ne pas fonctionner.');
-    });
-  }
+    // Initialiser la base de données en arrière-plan
+    initialiserBaseDeDonneesRender()
+      .then(() => {
+        console.log('✅ Base de données initialisée avec succès !');
+      })
+      .catch((erreur) => {
+        console.error('❌ Erreur lors de l\'initialisation de la base de données:', erreur.message);
+        console.log('⚠️ La base de données n\'a pas été initialisée. Certaines fonctionnalités peuvent ne pas fonctionner.');
+      });
+  });
 }
-
-demarrerServeur();
 
 module.exports = app;
