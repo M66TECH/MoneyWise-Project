@@ -13,6 +13,18 @@ const profilRoutes = require('./routes/profil');
 const notificationRoutes = require('./routes/notifications');
 const { errorHandler } = require('./middleware/errorHandler');
 const notificationService = require('./services/notificationService');
+// Import conditionnel pour éviter les erreurs si le fichier n'existe pas
+let initialiserBaseDeDonneesRender;
+try {
+  const initDb = require('../init-db-render');
+  initialiserBaseDeDonneesRender = initDb.initialiserBaseDeDonneesRender;
+} catch (error) {
+  console.warn('⚠️ Fichier init-db-render.js non trouvé, initialisation manuelle requise');
+  initialiserBaseDeDonneesRender = async () => {
+    throw new Error('Script d\'initialisation non disponible');
+  };
+}
+const { query } = require('./config/database');
 
 // Configuration des variables d'environnement
 dotenv.config();
@@ -154,16 +166,67 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 3000;
 
 
+// Fonction pour vérifier si la base de données est initialisée
+async function verifierBaseDeDonnees() {
+  try {
+    // Vérifier si la table utilisateurs existe
+    const result = await query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'utilisateurs'
+      );
+    `);
+    
+    return result.rows[0].exists;
+  } catch (error) {
+    console.error('❌ Erreur lors de la vérification de la base de données:', error.message);
+    return false;
+  }
+}
+
+// Fonction pour initialiser la base de données si nécessaire
+async function initialiserBaseDeDonneesSiNecessaire() {
+  try {
+    const estInitialisee = await verifierBaseDeDonnees();
+    
+    if (!estInitialisee) {
+      console.log('🔄 Base de données non initialisée. Initialisation en cours...');
+      await initialiserBaseDeDonneesRender();
+      console.log('✅ Base de données initialisée avec succès !');
+    } else {
+      console.log('✅ Base de données déjà initialisée');
+    }
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'initialisation de la base de données:', error.message);
+    console.log('⚠️ L\'application va continuer, mais certaines fonctionnalités peuvent ne pas fonctionner.');
+    console.log('💡 Exécutez manuellement: npm run db:init-render');
+  }
+}
+
 // Démarrer le serveur seulement si ce fichier est exécuté directement
 if (require.main === module) {
-  // Démarrer le serveur immédiatement
-  app.listen(PORT, () => {
-    console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
-    console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
-    
-    // Démarrer le service de notifications
-    notificationService.start();
-  });
+  // Initialiser la base de données avant de démarrer le serveur
+  initialiserBaseDeDonneesSiNecessaire()
+    .then(() => {
+      // Démarrer le serveur après l'initialisation
+      app.listen(PORT, () => {
+        console.log(`🚀 Serveur MoneyWise démarré sur le port ${PORT}`);
+        console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
+        
+        // Démarrer le service de notifications
+        notificationService.start();
+      });
+    })
+    .catch((error) => {
+      console.error('❌ Erreur fatale lors du démarrage:', error.message);
+      // Démarrer quand même le serveur pour permettre les diagnostics
+      app.listen(PORT, () => {
+        console.log(`⚠️ Serveur démarré en mode dégradé sur le port ${PORT}`);
+        console.log(`📊 API disponible sur http://localhost:${PORT}/api`);
+        console.log('💡 Vérifiez les logs ci-dessus pour les erreurs de base de données');
+      });
+    });
 }
 
 module.exports = app;
