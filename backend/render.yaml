@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: moneywise-backend
+    name: moneywise-project
     env: node
     plan: free
     buildCommand: npm install
