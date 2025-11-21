@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: moneywise-project
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://votre-frontend.onrender.com
+      - key: LOG_LEVEL
+        value: info
+      # DATABASE_URL est automatiquement fourni par Render si vous créez une base PostgreSQL
+      # Les variables suivantes doivent être configurées manuellement dans le dashboard Render :
+      # - EMAIL_USER (votre email Gmail)
+      # - EMAIL_PASS (mot de passe d'application Gmail)
+      # - CLOUDINARY_CLOUD_NAME
+      # - CLOUDINARY_API_KEY
+      # - CLOUDINARY_API_SECRET
+    healthCheckPath: /api/health
+    autoDeploy: true

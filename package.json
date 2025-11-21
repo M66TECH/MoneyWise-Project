@@ -1,0 +1,51 @@
+{
+  "name": "moneywise-backend",
+  "version": "1.0.0",
+  "description": "Backend API pour l'application MoneyWise - Gestion des finances personnelles",
+  "main": "src/app.js",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "db:init": "node init-db-local.js",
+    "db:init-render": "node init-db-render.js",
+    "db:update-locale": "node mise-a-jour-db-locale.js",
+    "db:migrate-photo": "node migrer-colonne-photo-profil.js",
+    "db:create": "createdb -U postgres moneywise",
+    "db:seed": "psql -U postgres -d moneywise -f src/database/seed.sql",
+    "db:reset": "dropdb -U postgres moneywise && npm run db:create && npm run db:init && npm run db:seed"
+  },
+  "keywords": [
+    "finance",
+    "budget",
+    "expenses",
+    "income",
+    "api",
+    "nodejs",
+    "express"
+  ],
+  "author": "MoneyWise Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.11.0",
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.0.1",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "jspdf": "^3.0.1",
+    "multer": "^2.0.2",
+    "nodemailer": "^7.0.5",
+    "pg": "^8.16.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
+
