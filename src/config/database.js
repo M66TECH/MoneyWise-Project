@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const logger = require('../utils/logger');
 
 // Configuration de la base de données avec support pour DATABASE_URL et variables individuelles
 let poolConfig;
@@ -23,10 +24,10 @@ if (process.env.DATABASE_URL) {
       rejectUnauthorized: false
     } : false,
   };
-  
+
   // Vérifier que le mot de passe est défini en développement
   if (!poolConfig.password && process.env.NODE_ENV !== 'production') {
-    console.warn('⚠️  DB_PASSWORD non défini. Assurez-vous de configurer les variables d\'environnement.');
+    logger.warn('⚠️  DB_PASSWORD non défini. Assurez-vous de configurer les variables d\'environnement.');
   }
 }
 
@@ -34,11 +35,11 @@ const pool = new Pool(poolConfig);
 
 // Test de connexion
 pool.on('connect', () => {
-  console.log('✅ Connexion à PostgreSQL établie');
+  logger.info('✅ Connexion à PostgreSQL établie');
 });
 
 pool.on('error', (err) => {
-  console.error('❌ Erreur de connexion PostgreSQL:', err);
+  logger.error('❌ Erreur de connexion PostgreSQL:', err);
 });
 
 // Fonction pour exécuter des requêtes avec gestion d'erreurs
@@ -47,7 +48,7 @@ const query = async (text, params) => {
     const result = await pool.query(text, params);
     return result;
   } catch (error) {
-    console.error('❌ Erreur de requête PostgreSQL:', error);
+    logger.error('❌ Erreur de requête PostgreSQL:', error);
     throw error;
   }
 };

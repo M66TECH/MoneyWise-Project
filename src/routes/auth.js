@@ -268,21 +268,25 @@ router.post('/register', uploadPhotoProfil, async (req, res, next) => {
     // Créer le token de vérification d'email
     const verificationToken = await EmailVerificationToken.creer(nouvelUtilisateur.id);
 
-    // Envoyer l'email de vérification
+    // Envoyer l'email de vérification (ne pas bloquer l'inscription si l'email échoue)
     try {
-      await emailService.envoyerEmailVerificationInscription({
+      const emailResult = await emailService.envoyerEmailVerificationInscription({
         email: nouvelUtilisateur.email,
         prenom: nouvelUtilisateur.prenom,
         nom: nouvelUtilisateur.nom,
         token: verificationToken.token
       });
+      
+      // Si l'email a été ignoré (configuration manquante), continuer quand même
+      if (emailResult && emailResult.skipped) {
+        console.warn('⚠️ Email de vérification non envoyé (configuration manquante)');
+      }
     } catch (emailError) {
       console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
-      // Supprimer l'utilisateur si l'email échoue
-      await query('DELETE FROM utilisateurs WHERE id = $1', [nouvelUtilisateur.id]);
-      return res.status(500).json({
-        message: 'Erreur lors de l\'envoi de l\'email de vérification. Veuillez réessayer.'
-      });
+      // Ne pas supprimer l'utilisateur - il pourra demander un nouvel email plus tard
+      // L'inscription est réussie même si l'email échoue
+      console.warn('⚠️ L\'utilisateur a été créé mais l\'email de vérification n\'a pas pu être envoyé.');
+      console.warn('💡 L\'utilisateur pourra demander un nouvel email de vérification depuis l\'interface.');
     }
 
     res.status(201).json({

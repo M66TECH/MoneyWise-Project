@@ -7,13 +7,37 @@ class EmailService {
   }
 
   initialiserTransporter() {
-    this.transporter = nodemailer.createTransport({
+    // Configuration avec timeout pour éviter les blocages
+    const transporterConfig = {
       service: process.env.EMAIL_SERVICE || 'gmail',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASSWORD
-      }
-    });
+      },
+      // Configuration de timeout pour éviter les blocages
+      connectionTimeout: 10000, // 10 secondes pour établir la connexion
+      greetingTimeout: 10000,    // 10 secondes pour la réponse du serveur
+      socketTimeout: 10000,      // 10 secondes pour les opérations socket
+      // Options supplémentaires pour améliorer la fiabilité
+      pool: true,
+      maxConnections: 1,
+      maxMessages: 3
+    };
+
+    // Si les variables d'environnement email ne sont pas configurées, créer un transporteur factice
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.warn('⚠️ EMAIL_USER ou EMAIL_PASSWORD non configurés. Les emails ne seront pas envoyés.');
+      // Créer un transporteur factice qui ne fait rien
+      this.transporter = {
+        sendMail: async () => {
+          console.warn('⚠️ Tentative d\'envoi d\'email ignorée (configuration email manquante)');
+          return { messageId: 'dummy' };
+        }
+      };
+      return;
+    }
+
+    this.transporter = nodemailer.createTransport(transporterConfig);
   }
 
   // Envoyer un email de récupération de mot de passe
@@ -97,6 +121,12 @@ class EmailService {
 
   // Envoyer un email de vérification d'inscription
   async envoyerEmailVerificationInscription({ email, prenom, nom, token }) {
+    // Vérifier si l'email est configuré
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.warn('⚠️ Configuration email manquante. Email de vérification non envoyé.');
+      return { skipped: true, reason: 'Email non configuré' };
+    }
+
     // Réinitialiser le transporteur avec les variables d'environnement actuelles
     this.initialiserTransporter();
     
@@ -176,6 +206,14 @@ class EmailService {
       return true;
     } catch (error) {
       console.error('❌ Erreur envoi email de vérification d\'inscription:', error);
+      
+      // Ne pas throw pour les erreurs de timeout ou de connexion
+      // L'utilisateur peut toujours demander un nouvel email plus tard
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED' || error.code === 'ESOCKETTIMEDOUT') {
+        console.warn('⚠️ Timeout ou erreur de connexion email. L\'utilisateur pourra demander un nouvel email.');
+        throw new Error('Service email temporairement indisponible. Vous pourrez demander un nouvel email de vérification.');
+      }
+      
       throw new Error('Impossible d\'envoyer l\'email de vérification d\'inscription');
     }
   }
