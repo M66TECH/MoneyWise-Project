@@ -7,22 +7,48 @@ class EmailService {
   }
 
   initialiserTransporter() {
-    // Configuration avec timeout pour éviter les blocages
-    const transporterConfig = {
-      service: process.env.EMAIL_SERVICE || 'gmail',
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      },
-      // Configuration de timeout pour éviter les blocages
-      connectionTimeout: 10000, // 10 secondes pour établir la connexion
-      greetingTimeout: 10000,    // 10 secondes pour la réponse du serveur
-      socketTimeout: 10000,      // 10 secondes pour les opérations socket
-      // Options supplémentaires pour améliorer la fiabilité
-      pool: true,
-      maxConnections: 1,
-      maxMessages: 3
-    };
+    // Configuration du transporteur
+    let transporterConfig = {};
+
+    // Option 1: Configuration explicite (recommandée pour la production)
+    if (process.env.EMAIL_HOST) {
+      transporterConfig = {
+        host: process.env.EMAIL_HOST,
+        port: parseInt(process.env.EMAIL_PORT || '587'),
+        secure: process.env.EMAIL_SECURE === 'true', // true pour 465, false pour les autres
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD
+        },
+        // Configuration de timeout
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        // Options de fiabilité
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 3
+      };
+      console.log(`📧 Configuration email: Hôte=${process.env.EMAIL_HOST}, Port=${transporterConfig.port}, Secure=${transporterConfig.secure}`);
+    }
+    // Option 2: Configuration par service (facile pour Gmail)
+    else {
+      transporterConfig = {
+        service: process.env.EMAIL_SERVICE || 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASSWORD
+        },
+        // Configuration de timeout
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 3
+      };
+      console.log(`📧 Configuration email: Service=${transporterConfig.service}`);
+    }
 
     // Si les variables d'environnement email ne sont pas configurées, créer un transporteur factice
     if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
@@ -32,7 +58,8 @@ class EmailService {
         sendMail: async () => {
           console.warn('⚠️ Tentative d\'envoi d\'email ignorée (configuration email manquante)');
           return { messageId: 'dummy' };
-        }
+        },
+        verify: async () => true
       };
       return;
     }
@@ -44,11 +71,11 @@ class EmailService {
   async envoyerEmailRecuperation(email, prenom, resetToken) {
     // Réinitialiser le transporteur avec les variables d'environnement actuelles
     this.initialiserTransporter();
-    
+
     // Déterminer l'URL frontend selon l'environnement
     const frontendUrl = this.getFrontendUrl();
     const resetUrl = `${frontendUrl}/reset-password?token=${resetToken}`;
-    
+
     const mailOptions = {
       from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -129,10 +156,10 @@ class EmailService {
 
     // Réinitialiser le transporteur avec les variables d'environnement actuelles
     this.initialiserTransporter();
-    
+
     // Déterminer l'URL frontend selon l'environnement
     const frontendUrl = this.getFrontendUrl();
-    
+
     const mailOptions = {
       from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
       to: email,
@@ -206,14 +233,14 @@ class EmailService {
       return true;
     } catch (error) {
       console.error('❌ Erreur envoi email de vérification d\'inscription:', error);
-      
+
       // Ne pas throw pour les erreurs de timeout ou de connexion
       // L'utilisateur peut toujours demander un nouvel email plus tard
       if (error.code === 'ETIMEDOUT' || error.code === 'ECONNREFUSED' || error.code === 'ESOCKETTIMEDOUT') {
         console.warn('⚠️ Timeout ou erreur de connexion email. L\'utilisateur pourra demander un nouvel email.');
         throw new Error('Service email temporairement indisponible. Vous pourrez demander un nouvel email de vérification.');
       }
-      
+
       throw new Error('Impossible d\'envoyer l\'email de vérification d\'inscription');
     }
   }
@@ -298,13 +325,13 @@ class EmailService {
     if (process.env.FRONTEND_URL) {
       return process.env.FRONTEND_URL;
     }
-    
+
     // Sinon, utiliser des valeurs par défaut selon l'environnement
     if (process.env.NODE_ENV === 'development') {
       // En développement, essayer plusieurs ports courants
       return 'http://localhost:5173'; // Vite par défaut
     }
-    
+
     // En production, utiliser l'URL Vercel
     return 'https://money-wise-coral.vercel.app';
   }
@@ -343,18 +370,18 @@ class EmailService {
   // Nouvelle méthode pour envoyer les alertes par email
   async envoyerAlertesFinancieres(email, prenom, alertes) {
     this.initialiserTransporter();
-    
+
     // Déterminer le niveau de gravité pour le sujet
     const alertesCritiques = alertes.filter(a => a.severite === 'critical');
     const alertesDanger = alertes.filter(a => a.severite === 'high');
-    
+
     let sujet = '📊 Alertes Financières - MoneyWise';
     if (alertesCritiques.length > 0) {
       sujet = '🚨 URGENT - Solde Critique - MoneyWise';
     } else if (alertesDanger.length > 0) {
       sujet = '⚠️ Alertes Importantes - MoneyWise';
     }
-    
+
     const mailOptions = {
       from: `"MoneyWise" <${process.env.EMAIL_USER}>`,
       to: email,
