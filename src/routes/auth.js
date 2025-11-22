@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const path = require('path');
 const fs = require('fs');
+const logger = require('../utils/logger');
 const Utilisateur = require('../models/Utilisateur');
 const PasswordResetToken = require('../models/PasswordResetToken');
 const EmailVerificationToken = require('../models/EmailVerificationToken');
@@ -18,12 +19,12 @@ const multer = require('multer');
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const uploadDir = path.join(__dirname, '../../uploads/profiles');
-    
+
     // Créer le dossier s'il n'existe pas
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
-    
+
     cb(null, uploadDir);
   },
   filename: function (req, file, cb) {
@@ -269,28 +270,45 @@ router.post('/register', uploadPhotoProfil, async (req, res, next) => {
     const verificationToken = await EmailVerificationToken.creer(nouvelUtilisateur.id);
 
     // Envoyer l'email de vérification (ne pas bloquer l'inscription si l'email échoue)
+    let emailEnvoye = false;
+    let messageEmail = '';
+
     try {
+      logger.info(`📧 Tentative d'envoi d'email de vérification à ${nouvelUtilisateur.email}`);
+
       const emailResult = await emailService.envoyerEmailVerificationInscription({
         email: nouvelUtilisateur.email,
         prenom: nouvelUtilisateur.prenom,
         nom: nouvelUtilisateur.nom,
         token: verificationToken.token
       });
-      
-      // Si l'email a été ignoré (configuration manquante), continuer quand même
+
+      // Si l'email a été ignoré (configuration manquante)
       if (emailResult && emailResult.skipped) {
-        console.warn('⚠️ Email de vérification non envoyé (configuration manquante)');
+        logger.warn('⚠️ Email de vérification non envoyé (configuration manquante)');
+        logger.warn(`📋 Raison: ${emailResult.reason}`);
+        messageEmail = 'Le service d\'email n\'est pas configuré. Contactez l\'administrateur.';
+      } else {
+        emailEnvoye = true;
+        logger.info(`✅ Email de vérification envoyé avec succès à ${nouvelUtilisateur.email}`);
+        messageEmail = 'Un email de vérification a été envoyé à votre adresse.';
       }
     } catch (emailError) {
-      console.error('Erreur lors de l\'envoi de l\'email de vérification:', emailError);
-      // Ne pas supprimer l'utilisateur - il pourra demander un nouvel email plus tard
-      // L'inscription est réussie même si l'email échoue
-      console.warn('⚠️ L\'utilisateur a été créé mais l\'email de vérification n\'a pas pu être envoyé.');
-      console.warn('💡 L\'utilisateur pourra demander un nouvel email de vérification depuis l\'interface.');
+      logger.error('❌ Erreur lors de l\'envoi de l\'email de vérification:');
+      logger.error(`   Message: ${emailError.message}`);
+      logger.error(`   Code: ${emailError.code || 'N/A'}`);
+      logger.error(`   Commande: ${emailError.command || 'N/A'}`);
+      logger.warn('⚠️ L\'utilisateur a été créé mais l\'email de vérification n\'a pas pu être envoyé.');
+      logger.warn('💡 L\'utilisateur pourra demander un nouvel email de vérification depuis l\'interface.');
+
+      // Message explicite pour l'utilisateur
+      messageEmail = 'L\'email de vérification n\'a pas pu être envoyé. Vous pouvez demander un nouvel email depuis la page de connexion.';
     }
 
     res.status(201).json({
-      message: 'Inscription réussie ! Veuillez vérifier votre email pour activer votre compte.',
+      message: 'Inscription réussie !',
+      emailEnvoye: emailEnvoye,
+      emailMessage: messageEmail,
       utilisateur: nouvelUtilisateur.toJSON()
     });
   } catch (erreur) {
@@ -372,7 +390,7 @@ router.post('/verify-email', async (req, res, next) => {
 
     // Vérifier l'email
     await utilisateur.verifierEmail();
-    
+
     // Marquer le token comme utilisé
     await verificationToken.marquerCommeUtilise();
 
@@ -933,14 +951,14 @@ router.post('/forgot-password', async (req, res, next) => {
     // Envoyer l'email
     try {
       await emailService.envoyerEmailRecuperation(email, utilisateur.prenom, resetToken);
-      
+
       res.json({
         message: 'Email de récupération envoyé'
       });
     } catch (emailError) {
       // Si l'email échoue, supprimer le token et retourner une erreur
       await PasswordResetToken.supprimerTokensUtilisateur(utilisateur.id);
-      
+
       console.error('Erreur envoi email:', emailError);
       res.status(500).json({
         message: 'Erreur lors de l\'envoi de l\'email. Réessayez plus tard.'
